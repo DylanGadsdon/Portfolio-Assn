@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zoom out — Dylan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/universe.css">
+  <!-- An "import map": lets our code write `import * as THREE from 'three'` -->
+  <script type="importmap">
+    { "imports": { "three": "/vendor/three/three.module.js" } }
+  </script>
+</head>
+<body>
+  <canvas id="cosmos" aria-label="Zoomable view from Earth out to the edge of the universe"></canvas>
+  <div id="labels" aria-hidden="true"></div>
+
+  <header class="hud top">
+    <a class="back" href="/">↓ Back to the iceberg</a>
+    <div class="readout" aria-live="polite">
+      <p class="label" id="place">Low Earth orbit</p>
+      <p id="power">10<sup>7</sup> m</p>
+      <p id="distance" class="small"></p>
+      <p id="lookback" class="small"></p>
+    </div>
+  </header>
+
+  <footer class="hud bottom">
+    <p id="sat-status" class="small">Loading satellites…</p>
+    <div class="controls">
+      <button type="button" id="zoom-in" aria-label="Zoom in">＋</button>
+      <button type="button" id="zoom-out" aria-label="Zoom out">－</button>
+      <button type="button" id="auto">▶ Auto zoom</button>
+    </div>
+    <p class="small hint">Scroll or pinch to zoom · drag to turn</p>
+  </footer>
+
+  <section id="bigbang" aria-hidden="true">
+    <div>
+      <p class="label">13.8 billion years ago</p>
+      <h1>The Big Bang</h1>
+      <p>Zooming out in space is also looking back in time: light from far away is old light.
+         At the edge of everything we can see, the whole universe was a glowing fog, first
+         red-hot, then orange, then white. It all started here.</p>
+      <a class="restart" href="/">↺ Start again at the iceberg</a>
+    </div>
+  </section>
+
+  <script src="/vendor/astronomy/astronomy.browser.min.js"></script>
+  <script src="/vendor/topojson/topojson-client.min.js"></script>
+  <script type="module" src="/js/universe/main.js"></script>
+</body>
+</html>

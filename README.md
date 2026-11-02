@@ -15,7 +15,7 @@ with interactive marine life. A submarine in the ocean takes you to the journal 
 - [x] Stage 6 — Search / filter
 - [x] Stage 7 — AI summary (OpenRouter)
 - [x] Stage 8–11 — Ocean, creatures, live data, space
-- [ ] Stage 12 — Zoom out: Earth with live satellite positions (CelesTrak), solar system, galaxy, universe, Big Bang
+- [x] Stage 12 — Zoom out: Earth with live satellite positions (CelesTrak), solar system, galaxy, universe, Big Bang
 - [ ] Stage 13 — Deploy + slides
 
 ## Running locally
