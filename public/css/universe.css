@@ -39,7 +39,15 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 #power sup { font-size: .55em; }
 .small { margin: 0; font-size: .74rem; color: #b5c7d4; line-height: 1.45; }
 .hint { width: 100%; text-align: center; opacity: .7; }
-#sat-status { background: rgba(5,10,20,.55); padding: 6px 10px; border-radius: 8px; }
+#sat-status { margin-bottom: 6px; }
+.sat-box { background: rgba(5,10,20,.6); padding: 10px 12px; border-radius: 10px; backdrop-filter: blur(6px); display: grid; gap: 4px; }
+.speeds { display: flex; gap: 6px; }
+.speeds button {
+  font: inherit; font-size: .75rem; cursor: pointer; color: #fff;
+  padding: 5px 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,.35); background: transparent;
+}
+.speeds button[aria-pressed="true"] { background: var(--sonar); color: #021; border-color: var(--sonar); }
+#sim-clock { font-variant-numeric: tabular-nums; }
 
 #bigbang {
   position: fixed; inset: 0; display: grid; place-items: center; padding: 24px;

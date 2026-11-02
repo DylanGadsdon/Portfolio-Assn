@@ -162,6 +162,21 @@ function updateReadout() {
     : `Light from here set off ${human(Math.min(13.8e9, seconds / 3.156e7))} years ago`;
 }
 
+// Does the straight line from the camera to a point pass through the Earth
+// (a sphere of radius 1 at the centre)? Standard ray–sphere test.
+const ray = new THREE.Vector3();
+function behindEarth(cam, point) {
+  ray.subVectors(point, cam);
+  const length = ray.length();
+  ray.divideScalar(length);
+  const b = cam.dot(ray);
+  const c = cam.lengthSq() - 1;
+  const disc = b * b - c;
+  if (disc < 0) return false;                 // the line misses the Earth
+  const hit = -b - Math.sqrt(disc);           // distance to where it enters the Earth
+  return hit > 0 && hit < length;             // it enters the Earth before reaching the point
+}
+
 // ---------- Big Bang ----------
 const bang = document.querySelector('#bigbang');
 function bigBangColour(t) {
@@ -193,10 +208,29 @@ const dir = new THREE.Vector3();
 const tmp = new THREE.Vector3();
 let last = performance.now();
 
+// ---------- Time-lapse ----------
+// Satellites really do circle the Earth every ~90 minutes, which is too slow
+// to see. The speed buttons run the clock faster. Every position is still
+// calculated from the real orbits, just for a time a bit in the future.
+let speed = 60;
+let simMs = Date.now();
+const clockEl = document.querySelector('#sim-clock');
+for (const btn of document.querySelectorAll('[data-speed]')) {
+  btn.addEventListener('click', () => {
+    speed = Number(btn.dataset.speed);
+    if (speed === 1) simMs = Date.now();          // "Live" jumps back to right now
+    for (const b of document.querySelectorAll('[data-speed]')) b.setAttribute('aria-pressed', String(b === btn));
+  });
+}
+
 function frame(nowMs) {
   const dt = Math.min(0.05, (nowMs - last) / 1000);
   last = nowMs;
-  const now = new Date();
+  simMs += dt * 1000 * speed;
+  const now = new Date(simMs);
+  clockEl.textContent = speed === 1
+    ? `Live · ${now.toLocaleTimeString('en-GB')}`
+    : `Time-lapse ×${speed} · showing ${now.toLocaleTimeString('en-GB')}`;
 
   if (auto) {
     targetZ = clampZ(targetZ + dt * 0.75);
@@ -240,6 +274,8 @@ function frame(nowMs) {
     const layer = layers.find((x) => x.name === l.scene);
     const on = shown.has(l.scene) && z >= l.range[0] && z <= l.range[1];
     if (!on) { l.el.style.display = 'none'; continue; }
+    // Earth labels: hide a satellite's label while it's behind the planet
+    if (l.scene === 'earth' && behindEarth(layer.camera.position, l.getPos())) { l.el.style.display = 'none'; continue; }
     tmp.copy(l.getPos()).project(layer.camera);
     if (tmp.z > 1 || Math.abs(tmp.x) > 1.1 || Math.abs(tmp.y) > 1.1) { l.el.style.display = 'none'; continue; }
     const edge = Math.min(smooth(l.range[0], l.range[0] + 0.3, z), 1 - smooth(l.range[1] - 0.3, l.range[1], z));

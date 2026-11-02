@@ -28,7 +28,15 @@
   </header>
 
   <footer class="hud bottom">
-    <p id="sat-status" class="small">Loading satellites…</p>
+    <div class="sat-box">
+      <p id="sat-status" class="small">Loading satellites…</p>
+      <div class="speeds" role="group" aria-label="Satellite speed">
+        <button type="button" data-speed="1" aria-pressed="false">Live</button>
+        <button type="button" data-speed="60" aria-pressed="true">×60</button>
+        <button type="button" data-speed="600" aria-pressed="false">×600</button>
+      </div>
+      <p id="sim-clock" class="small"></p>
+    </div>
     <div class="controls">
       <button type="button" id="zoom-in" aria-label="Zoom in">＋</button>
       <button type="button" id="zoom-out" aria-label="Zoom out">－</button>

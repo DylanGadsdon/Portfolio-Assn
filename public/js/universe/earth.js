@@ -73,10 +73,26 @@ export function createEarth({ addLabel, setStatus }) {
   addLabel('The Moon', () => moonPos, [8.1, 10.1], { scene: 'earth', big: true });
 
   // ---- Satellites ----
+  // Two speeds of maths keep ~12,000 satellites moving smoothly:
+  //  - EXACT: SGP4 (the official orbit model) gives a satellite's true position
+  //    and velocity at one moment. Too slow to do for all of them every frame,
+  //    so we redo a rolling slice each frame (the whole fleet about once a second).
+  //  - FAST: in between, each satellite glides round the Earth from its last exact
+  //    point, as if on a circle. Two multiplications per satellite per frame.
   let sats = [];
   let points = null;
-  let iss = null;
   let cursor = 0;
+  let base = null;    // per satellite: p (position), q (90° ahead), angular speed, time
+  const famous = [];  // the labelled ones: their own bigger dot + orbit trail
+
+  // Well-known satellites to label. First match by name in the CelesTrak list.
+  const FAMOUS = [
+    [/^ISS \(ZARYA\)/, 'ISS · International Space Station', '#ffe08c'],
+    [/^CSS \(TIANHE\)/, 'Tiangong · Chinese space station', '#ffb38a'],
+    [/^HST$/, 'Hubble Space Telescope', '#c9b6ff'],
+    [/^STARLINK-/, 'Starlink · one of ~7,000', '#9fe7ff'],
+    [/^GPS BIII/, 'GPS satellite · 20,200 km up', '#ffd166'],
+  ];
 
   async function loadSatellites() {
     for (const group of ['active', 'stations']) {
@@ -85,9 +101,9 @@ export function createEarth({ addLabel, setStatus }) {
         if (!res.ok) throw new Error(res.status);
         const data = await res.json();
         sats = data.sats.map((s) => ({ name: s.name, rec: twoline2satrec(s.line1, s.line2) }));
-        build();
+        build(data.fetchedAt);
         const when = new Date(data.fetchedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        setStatus(`${sats.length.toLocaleString('en-GB')} satellites · live positions from CelesTrak orbits (fetched ${when})`);
+        setStatus(`${sats.length.toLocaleString('en-GB')} satellites · real orbits from CelesTrak (fetched ${when})`);
         return;
       } catch (err) {
         console.warn(`Satellites (${group}) unavailable`, err);
@@ -97,37 +113,65 @@ export function createEarth({ addLabel, setStatus }) {
   }
 
   function build() {
-    const positions = new Float32Array(sats.length * 3);
-    const colors = new Float32Array(sats.length * 3);
-    points = pointCloud(positions, colors, { size: 2.4 });
+    const n = sats.length;
+    base = { p: new Float32Array(n * 3), q: new Float32Array(n * 3), w: new Float32Array(n), t: new Float64Array(n) };
+    points = pointCloud(new Float32Array(n * 3), new Float32Array(n * 3), { size: 2.4 });
     points.frustumCulled = false;
     scene.add(points);
-    const issIndex = sats.findIndex((s) => /ISS \(ZARYA\)/.test(s.name));
-    if (issIndex >= 0) {
-      iss = { index: issIndex, dot: glow('rgba(255,224,140,1)', 14) };
-      scene.add(iss.dot);
-      addLabel('ISS · ~400 km up', () => iss.dot.position, [6.9, 7.9], { scene: 'earth', big: true });
+
+    for (const [pattern, label, colour] of FAMOUS) {
+      const index = sats.findIndex((s) => pattern.test(s.name));
+      if (index < 0) continue;
+      const dot = glow(hexToRgba(colour), 11);
+      const trail = new THREE.Line(new THREE.BufferGeometry(),
+        new THREE.LineBasicMaterial({ color: colour, transparent: true, opacity: 0.45 }));
+      scene.add(dot, trail);
+      const high = /GPS/.test(label);
+      addLabel(label, () => dot.position, high ? [7.5, 8.9] : [6.9, 8.0], { scene: 'earth', big: index === 0 || /ISS/.test(label) });
+      famous.push({ index, dot, trail, trailAt: 0 });
     }
-    // Calculate every position once now, then spread the work over frames
-    for (let i = 0; i < sats.length; i++) updateSat(i, new Date());
-    points.geometry.attributes.position.needsUpdate = true;
+
+    const now = new Date();
+    for (let i = 0; i < n; i++) exact(i, now);
     points.geometry.attributes.color.needsUpdate = true;
   }
 
   const colour = new THREE.Color();
-  function updateSat(i, now) {
-    const pv = propagate(sats[i].rec, now);
-    const pos = points.geometry.attributes.position.array;
-    if (!pv || !pv.position) { pos[i * 3] = pos[i * 3 + 1] = pos[i * 3 + 2] = 0; return; }
-    const { x, y, z } = pv.position;              // km, Earth-centred
-    pos[i * 3] = x * KM; pos[i * 3 + 1] = z * KM; pos[i * 3 + 2] = -y * KM;
+  const P = new THREE.Vector3(), V = new THREE.Vector3(), K = new THREE.Vector3();
+
+  // EXACT position + velocity from SGP4, stored as the start of the next glide
+  function exact(i, date) {
+    const pv = propagate(sats[i].rec, date);
+    if (!pv || !pv.position) { base.w[i] = 0; base.p.fill(0, i * 3, i * 3 + 3); base.q.fill(0, i * 3, i * 3 + 3); return; }
+    // satellite.js: km, Earth-centred, z = north. Three.js: y = up.
+    P.set(pv.position.x, pv.position.z, -pv.position.y).multiplyScalar(KM);
+    V.set(pv.velocity.x, pv.velocity.z, -pv.velocity.y).multiplyScalar(KM);   // radii per second
+    const r = P.length();
+    K.crossVectors(P, V).normalize();            // the axis it orbits around
+    const q = new THREE.Vector3().crossVectors(K, P);   // same distance, 90° further along
+    base.p.set([P.x, P.y, P.z], i * 3);
+    base.q.set([q.x, q.y, q.z], i * 3);
+    base.w[i] = V.length() / r;                  // radians per second
+    base.t[i] = date.getTime();
 
     // Colour by height: low orbit cyan, middle (GPS etc.) yellow, geostationary pink
-    const alt = Math.hypot(x, y, z) - 6371;
+    const alt = (r - 1) * 6371;
     colour.set(alt < 2000 ? 0x7fe8ff : alt < 30000 ? 0xffd166 : 0xff7ac8);
-    const col = points.geometry.attributes.color.array;
-    col[i * 3] = colour.r; col[i * 3 + 1] = colour.g; col[i * 3 + 2] = colour.b;
-    if (iss && i === iss.index) iss.dot.position.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+    points.geometry.attributes.color.array.set([colour.r, colour.g, colour.b], i * 3);
+  }
+
+  // A labelled satellite's path over one full orbit, from SGP4
+  function drawTrail(f, date) {
+    const rec = sats[f.index].rec;
+    const minutes = (2 * Math.PI) / rec.no;      // rec.no = radians per minute
+    const pts = [];
+    for (let k = 0; k <= 120; k++) {
+      const pv = propagate(rec, new Date(date.getTime() + (k / 120) * minutes * 60000));
+      if (pv?.position) pts.push(new THREE.Vector3(pv.position.x, pv.position.z, -pv.position.y).multiplyScalar(KM));
+    }
+    f.trail.geometry.dispose();
+    f.trail.geometry = new THREE.BufferGeometry().setFromPoints(pts);
+    f.trailAt = date.getTime();
   }
 
   loadSatellites();
@@ -143,14 +187,41 @@ export function createEarth({ addLabel, setStatus }) {
       earth.rotation.y = gstime(now);
       atmosphere.material.uniforms.opacity.value = 1 - smooth(9.7, 10.5, z);
       if (!points || z > 10.5) return;
-      const slice = Math.ceil(sats.length / 120);     // whole fleet every ~2 seconds
+
+      // EXACT for a slice of the fleet
+      const slice = Math.ceil(sats.length / 60);
       for (let n = 0; n < slice; n++) {
-        updateSat(cursor, now);
+        exact(cursor, now);
         cursor = (cursor + 1) % sats.length;
       }
+      if (slice) points.geometry.attributes.color.needsUpdate = true;
+
+      // FAST glide for everyone: position = p·cos(θ) + q·sin(θ)
+      const out = points.geometry.attributes.position.array;
+      const { p, q, w, t } = base;
+      const ms = now.getTime();
+      for (let i = 0; i < sats.length; i++) {
+        const th = w[i] * (ms - t[i]) / 1000;
+        const c = Math.cos(th), s = Math.sin(th), j = i * 3;
+        out[j] = p[j] * c + q[j] * s;
+        out[j + 1] = p[j + 1] * c + q[j + 1] * s;
+        out[j + 2] = p[j + 2] * c + q[j + 2] * s;
+      }
       points.geometry.attributes.position.needsUpdate = true;
+
+      // Labelled satellites: exact every frame, trail redrawn every simulated 5 min
+      for (const f of famous) {
+        const pv = propagate(sats[f.index].rec, now);
+        if (pv?.position) f.dot.position.set(pv.position.x, pv.position.z, -pv.position.y).multiplyScalar(KM);
+        if (Math.abs(ms - f.trailAt) > 300000) drawTrail(f, now);
+      }
     },
   };
+}
+
+function hexToRgba(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},1)`;
 }
 
 // ---- Earth's surface, drawn on a canvas (equirectangular map) ----
