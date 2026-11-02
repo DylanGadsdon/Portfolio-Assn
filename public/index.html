@@ -3,17 +3,97 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dylan — Iceberg</title>
-  <link rel="stylesheet" href="/css/main.css">
+  <title>Dylan — the Iceberg</title>
+  <meta name="description" content="Dylan's portfolio: an iceberg between deep space and the deep sea.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/world.css">
 </head>
 <body>
-  <main class="sea-level">
-    <h1>DYLAN</h1>
-    <p>Stage 0: the server is running. The ocean comes later.</p>
-    <p id="status">Checking server…</p>
-  </main>
+  <!-- The whole world is one tall element. Everything inside is positioned
+       by depth, using the --vh unit (1% of the screen height). -->
+  <div id="world">
+    <section id="space" aria-label="Space">
+      <canvas id="stars"></canvas>
+      <a id="leave-orbit" href="/universe">⊖ Leave orbit · zoom out</a>
+      <div id="moon-panel" class="panel">
+        <div id="moon-disc" aria-hidden="true"></div>
+        <div>
+          <p class="label">The Moon · live</p>
+          <p id="moon-phase" class="big">…</p>
+          <p id="moon-tide" class="small"></p>
+        </div>
+      </div>
+      <div id="station" class="thing" title="Space station"></div>
+      <div id="warship" class="thing" aria-hidden="true"></div>
+    </section>
 
-  <!-- type="module" lets us use modern import/export between JS files -->
-  <script type="module" src="/js/main.js"></script>
+    <section id="sky" aria-label="Sky">
+      <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+      <div id="balloons" aria-label="Live weather"></div>
+    </section>
+
+    <section id="sea" aria-label="Ocean">
+      <div class="rays"></div>
+      <p class="zone-label" style="--y:302">Sunlight zone · 0–200 m</p>
+      <p class="zone-label" style="--y:462">Twilight zone · 200–1,000 m</p>
+      <p class="zone-label" style="--y:712">Midnight zone · 1,000–4,000 m</p>
+      <p class="zone-label" style="--y:962">The abyss · 4,000 m+</p>
+      <div class="snow"></div>
+    </section>
+
+    <div id="iceberg">
+      <svg viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="ice-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfe9f7"/></linearGradient>
+          <linearGradient id="ice-deep" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd0ea" stop-opacity=".85"/><stop offset=".5" stop-color="#2f7fa8" stop-opacity=".55"/><stop offset="1" stop-color="#0b3550" stop-opacity=".25"/></linearGradient>
+        </defs>
+        <!-- Under water: about 90% of a real iceberg is hidden -->
+        <path d="M300 79 L720 79 L800 140 L905 260 L960 420 L910 560 L980 690 L860 820 L700 930 L520 1000 L360 960 L190 880 L70 740 L20 560 L80 400 L40 260 L170 130Z" fill="url(#ice-deep)"/>
+        <path d="M300 79 L720 79 L760 120 L640 150 L520 120 L400 160 L260 120Z" fill="#bfe6f6" opacity=".55"/>
+        <!-- Above water: the tip -->
+        <path d="M300 79 L360 30 L420 44 L480 0 L560 26 L610 14 L680 50 L720 79Z" fill="url(#ice-top)"/>
+        <path d="M480 0 L520 79 L560 26Z" fill="#e3f3fb"/><path d="M610 14 L640 79 L680 50Z" fill="#d6edf8"/>
+      </svg>
+      <h1 id="name">DYLAN</h1>
+      
+      <div id="capsules" aria-label="Portfolio, frozen in the ice"></div>
+    </div>
+
+    <div id="buoy" class="thing">
+      <div class="buoy-art"></div>
+      <div class="panel pop-panel">
+        <p class="label">Earth · live estimate</p>
+        <p id="pop-count" class="big">…</p>
+        <p class="small"><span class="born">● born</span> <span id="births">0</span> · <span class="died">● died</span> <span id="deaths">0</span> since you arrived</p>
+        <div id="pop-stream" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div id="seabed">
+      <div class="panel quake-panel">
+        <p class="label">Seismograph · USGS live</p>
+        <canvas id="seismo" height="90"></canvas>
+        <ol id="quakes"><li class="small">Listening to the plates…</li></ol>
+      </div>
+    </div>
+
+    <div id="creatures"></div>
+    <div id="effects" aria-hidden="true"></div>
+  </div>
+
+  <!-- Fixed controls on top of the world -->
+  <aside class="gauge" aria-live="polite">
+    <p class="label" id="gauge-zone">Sea level</p>
+    <p id="gauge-value">0 m</p>
+    <div class="gauge-track"><div id="gauge-dot"></div></div>
+  </aside>
+  <a class="logbook-btn" href="/blog">⌁ The Logbook</a>
+  <p class="hint">Scroll up for space · down to dive · drag the animals</p>
+  <div id="toast" role="status"></div>
+
+  <script src="/vendor/astronomy/astronomy.browser.min.js"></script>
+  <script type="module" src="/js/world/main.js"></script>
 </body>
 </html>

@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { pool } from './db.js';
 import postsRouter from './routes/posts.js';
 import authRouter from './routes/auth.js';
+import satellitesRouter from './routes/satellites.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,8 +47,18 @@ app.use(session({
 // 5. Serve everything in /public (HTML, CSS, JS, images) as-is
 app.use(express.static(publicDir));
 
-// /blog shows the journal page
+// Browser libraries, served straight from node_modules so the versions are
+// pinned in package.json and nothing depends on an outside CDN.
+const modules = path.join(__dirname, '..', 'node_modules');
+app.use('/vendor/three', express.static(path.join(modules, 'three', 'build')));
+app.use('/vendor/satellite', express.static(path.join(modules, 'satellite.js', 'dist')));
+app.use('/vendor/astronomy', express.static(path.join(modules, 'astronomy-engine')));
+app.use('/vendor/topojson', express.static(path.join(modules, 'topojson-client', 'dist')));
+app.use('/vendor/world-atlas', express.static(path.join(modules, 'world-atlas')));
+
+// Pages
 app.get('/blog', (req, res) => res.sendFile(path.join(publicDir, 'blog.html')));
+app.get('/universe', (req, res) => res.sendFile(path.join(publicDir, 'universe.html')));
 
 // 6. API routes. Every data request starts with /api/
 app.get('/api/health', (req, res) => {
@@ -55,6 +66,7 @@ app.get('/api/health', (req, res) => {
 });
 app.use('/api/auth', authRouter);
 app.use('/api/posts', postsRouter);
+app.use('/api/satellites', satellitesRouter);
 
 // 7. If anything above throws an error, end up here instead of crashing
 app.use((err, req, res, next) => {

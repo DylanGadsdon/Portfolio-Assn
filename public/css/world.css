@@ -1,0 +1,373 @@
+/* The world: space (top) → sky → sea level → the deep (bottom).
+   Positions use --vh, set once by JS to 1% of the screen height. Using our own
+   unit stops mobile browsers from shifting everything when the URL bar hides. */
+
+:root {
+  --vh: 1vh;
+  --sea: 290;              /* sea level, in vh from the top of the world */
+  --font-head: 'Fraunces', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --sonar: #5fe0c4;
+  --brass: #d4a24c;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: #01040a;
+  color: #eef4f8;
+  font-family: var(--font-mono);
+  overflow-x: hidden;
+}
+
+#world {
+  position: relative;
+  height: calc(var(--vh) * 1160);
+  overflow: hidden;
+}
+
+/* ---------- Layers ---------- */
+#space, #sky, #sea { position: absolute; left: 0; right: 0; }
+
+#space {
+  top: 0;
+  height: calc(var(--vh) * 160);
+  background: linear-gradient(#000 0%, #02030a 60%, #0a1a3a 100%);
+}
+#stars { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+#sky {
+  top: calc(var(--vh) * 160);
+  height: calc(var(--vh) * 130);
+  background: linear-gradient(#0a1a3a 0%, #23518f 25%, #5ea6d8 60%, #a8dcf2 100%);
+}
+.cloud {
+  position: absolute;
+  height: 60px;
+  border-radius: 60px;
+  background: rgba(255,255,255,.75);
+  filter: blur(2px);
+  animation: drift 90s linear infinite;
+}
+.cloud::before, .cloud::after { content: ''; position: absolute; background: inherit; border-radius: 50%; }
+.cloud::before { width: 70px; height: 70px; top: -34px; left: 30px; }
+.cloud::after  { width: 90px; height: 90px; top: -50px; left: 80px; }
+.c1 { width: 220px; top: 62%; left: -10%; }
+.c2 { width: 160px; top: 80%; left: 40%; animation-duration: 120s; opacity: .8; }
+.c3 { width: 260px; top: 45%; left: 70%; animation-duration: 150s; opacity: .6; }
+@keyframes drift { from { transform: translateX(-30vw); } to { transform: translateX(130vw); } }
+
+#sea {
+  top: calc(var(--vh) * var(--sea));
+  height: calc(var(--vh) * 870);
+  background: linear-gradient(
+    #2f9fd4 0%, #12679c 9%, #0a3d68 19%, #052443 36%, #020d1c 52%, #010509 75%, #000 100%);
+}
+#sea::before {   /* the water surface line */
+  content: '';
+  position: absolute; left: 0; right: 0; top: -6px; height: 12px;
+  background: repeating-linear-gradient(90deg, rgba(255,255,255,.55) 0 30px, rgba(255,255,255,.15) 30px 60px);
+  animation: waves 4s linear infinite;
+  filter: blur(1px);
+}
+@keyframes waves { to { background-position: 60px 0; } }
+
+.rays {
+  position: absolute; left: 0; right: 0; top: 0; height: calc(var(--vh) * 170);
+  background: repeating-linear-gradient(100deg, rgba(255,255,255,.07) 0 40px, transparent 40px 120px);
+  mask-image: linear-gradient(#000, transparent);
+  -webkit-mask-image: linear-gradient(#000, transparent);
+  animation: rays 12s ease-in-out infinite alternate;
+}
+@keyframes rays { to { transform: translateX(60px); } }
+
+.snow {   /* "marine snow": drifting particles in the deep */
+  position: absolute; left: 0; right: 0; top: calc(var(--vh) * 300); bottom: 0;
+  background-image:
+    radial-gradient(circle at 23% 31%, rgba(255,255,255,.35) 1px, transparent 1.6px),
+    radial-gradient(circle at 71% 64%, rgba(255,255,255,.22) 1px, transparent 1.6px),
+    radial-gradient(circle at 46% 87%, rgba(255,255,255,.28) 1.2px, transparent 1.8px),
+    radial-gradient(circle at 88% 12%, rgba(255,255,255,.18) 1px, transparent 1.6px);
+  background-size: 97px 131px, 173px 211px, 239px 283px, 131px 167px;
+  animation: snow 60s linear infinite;
+}
+@keyframes snow { to { background-position: 13px 655px, -21px 1055px, 9px 1415px, 30px 835px; } }
+
+.zone-label {
+  position: absolute;
+  top: calc(var(--vh) * (var(--y) - var(--sea)));
+  right: 16px;
+  margin: 0;
+  font-size: .72rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(214, 240, 255, .55);
+}
+
+/* ---------- Iceberg ---------- */
+#iceberg {
+  position: absolute;
+  top: calc(var(--vh) * (var(--sea) - 38));
+  height: calc(var(--vh) * 480);
+  --ice-w: min(66vw, 900px);
+  left: 6vw;
+  width: var(--ice-w);
+  z-index: 2;
+}
+#iceberg > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+#iceberg.rising { animation: emerge 3.2s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes emerge {
+  0%   { transform: translateY(calc(var(--vh) * 30)); }
+  70%  { transform: translateY(calc(var(--vh) * -1.5)); }
+  100% { transform: translateY(0); }
+}
+#iceberg.shake { animation: shake .6s linear; }
+@keyframes shake {
+  20% { transform: translate(-8px, 4px); } 40% { transform: translate(7px, -3px); }
+  60% { transform: translate(-5px, 2px); } 80% { transform: translate(3px, -1px); }
+}
+
+#name {
+  position: absolute;
+  top: calc(var(--vh) * 26);
+  left: 0; right: 0;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-head);
+  font-weight: 900;
+  font-size: calc(var(--ice-w) * 0.072);
+  letter-spacing: .12em;
+  padding-left: .12em;
+  color: #0e3a57;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* The little guy and his rocket, standing on the iceberg tip */
+#guy {
+  left: calc(37% - 17px); top: calc(var(--vh) * 16.7 - 52px); width: 34px;
+  padding: 0; border: 0; background: none; cursor: pointer; z-index: 3;
+}
+#guy .tip { bottom: 105%; }
+#guy:hover .tip, #guy:focus-visible .tip { opacity: 1; }
+#guy:hover .art { transform: translateY(-4px); }
+#guy .art { transition: transform .2s; }
+#rocket { left: calc(60% - 19px); top: calc(var(--vh) * 7.9 - 80px); width: 38px; cursor: pointer; z-index: 3; }
+#rocket:hover { filter: drop-shadow(0 0 8px rgba(255,200,120,.8)); }
+
+/* Portfolio pieces frozen in the ice */
+.capsule {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: clamp(150px, 22vw, 230px);
+  padding: 12px 14px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: #e9f8ff;
+  background: linear-gradient(135deg, rgba(210,240,255,.28), rgba(120,200,240,.12));
+  border: 1px solid rgba(220,245,255,.5);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 0 24px rgba(140,220,255,.25), inset 0 0 18px rgba(255,255,255,.15);
+  transition: transform .25s, box-shadow .25s;
+}
+.capsule:hover, .capsule:focus-visible {
+  transform: translate(-50%, -50%) scale(1.06) rotate(-1deg);
+  box-shadow: 0 0 40px rgba(140,240,255,.55), inset 0 0 18px rgba(255,255,255,.25);
+  outline: none;
+}
+.capsule .label { color: #bfefff; }
+.capsule strong { display: block; margin-top: 4px; font-family: var(--font-head); font-size: 1.05rem; line-height: 1.2; }
+
+/* ---------- Things that move ---------- */
+.thing, .creature { position: absolute; top: 0; left: 0; will-change: transform; }
+.creature { z-index: 3; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.creature.dragging { cursor: grabbing; z-index: 10; }
+.creature .sprite { transition: filter .2s; }
+.creature:hover .sprite, .creature.dragging .sprite { filter: drop-shadow(0 0 10px rgba(160,255,230,.6)) brightness(1.15); }
+.art { display: block; width: 100%; height: auto; overflow: visible; }
+
+.tip {
+  position: absolute; left: 50%; bottom: 100%;
+  transform: translate(-50%, -6px) scaleX(var(--unflip, 1));
+  white-space: nowrap;
+  font-size: .7rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(1, 10, 20, .85);
+  color: #dff7ff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+.creature:hover .tip { opacity: 1; }
+
+.gull .wing { transform-origin: 40px 21px; animation: flap .5s ease-in-out infinite alternate; }
+.gull .wing-back { animation-delay: -.25s; }
+@keyframes flap { to { transform: scaleY(-.6); } }
+.whale .fluke { transform-origin: 40px 76px; animation: fluke 3s ease-in-out infinite alternate; }
+@keyframes fluke { to { transform: rotate(10deg); } }
+.squid .arms { transform-origin: 112px 60px; animation: arms 2.4s ease-in-out infinite alternate; }
+@keyframes arms { to { transform: scaleX(.86) skewY(4deg); } }
+.jelly { animation: pulse 2.2s ease-in-out infinite; filter: drop-shadow(0 0 12px rgba(220,140,255,.8)); }
+@keyframes pulse { 50% { transform: scaleY(.88) scaleX(1.06); } }
+.angler .lure { filter: drop-shadow(0 0 8px #aaffe0); animation: lure 1.8s ease-in-out infinite; }
+@keyframes lure { 50% { opacity: .35; } }
+.submarine .prop { transform-origin: 10px 58px; animation: prop .3s linear infinite alternate; }
+@keyframes prop { to { transform: scaleY(.3); } }
+.rocket .flame { opacity: 0; transform-origin: 30px 108px; }
+.rocket.firing .flame { opacity: 1; animation: flame .12s linear infinite alternate; }
+@keyframes flame { to { transform: scaleY(1.3); } }
+.guy .arm-wave { transform-origin: 30px 28px; animation: wave 1s ease-in-out infinite alternate; }
+@keyframes wave { to { transform: rotate(-30deg); } }
+.station .beacon { animation: lure 1s steps(1) infinite; }
+.warship .vents { filter: drop-shadow(0 0 10px #7dff9a); }
+
+#station { width: clamp(220px, 34vw, 380px); z-index: 2; }
+#warship { width: clamp(300px, 52vw, 640px); z-index: 4; opacity: 0; pointer-events: none; }
+
+/* ---------- Panels (live data) ---------- */
+.panel {
+  background: rgba(3, 12, 24, .72);
+  border: 1px solid rgba(95, 224, 196, .35);
+  border-radius: 14px;
+  padding: 12px 14px;
+  backdrop-filter: blur(6px);
+}
+.label { margin: 0; font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--sonar); }
+.big { margin: 2px 0; font-family: var(--font-head); font-size: 1.35rem; font-weight: 600; }
+.small { margin: 0; font-size: .75rem; color: #b5c7d4; line-height: 1.45; }
+
+#leave-orbit {
+  position: absolute; top: calc(var(--vh) * 6); left: 50%; transform: translateX(-50%);
+  z-index: 3;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.4);
+  color: #fff; text-decoration: none; font-size: .85rem;
+  background: rgba(255,255,255,.06);
+  transition: background .2s, box-shadow .2s;
+}
+#leave-orbit:hover { background: rgba(255,255,255,.14); box-shadow: 0 0 30px rgba(140,180,255,.4); }
+
+#moon-panel {
+  position: absolute; top: calc(var(--vh) * 22); left: 16px;
+  display: flex; gap: 14px; align-items: center;
+  max-width: 330px; z-index: 3;
+}
+#moon-disc svg { width: 64px; height: 64px; display: block; }
+
+/* Weather balloons */
+.balloon-wrap { position: absolute; left: min(var(--x), calc(100% - 160px)); width: 150px; text-align: center; animation: bob 6s ease-in-out infinite; }
+.balloon-wrap .art { width: 46px; margin: 0 auto; }
+.balloon-wrap .panel { padding: 8px 10px; margin-top: -4px; }
+.balloon-wrap .big { font-size: 1.15rem; }
+@keyframes bob { 50% { transform: translateY(-14px); } }
+
+/* Population buoy */
+#buoy {
+  left: auto; top: auto;
+  right: max(140px, 12vw);
+  bottom: calc(var(--vh) * (1160 - var(--sea)) - 34px);   /* float on the sea line */
+  z-index: 4; width: 230px; display: flex; flex-direction: column; align-items: center;
+  animation: bob 5s ease-in-out infinite;
+}
+#buoy .buoy-art { width: 56px; order: 2; }
+#buoy .pop-panel { order: 1; width: 230px; margin-bottom: 6px; }
+#pop-count { font-variant-numeric: tabular-nums; }
+.born { color: #8fffc8; } .died { color: #a7b4c2; }
+#pop-stream { position: relative; height: 26px; overflow: hidden; }
+.pop-icon { position: absolute; bottom: 0; animation: rise 2.4s ease-out forwards; }
+.pop-icon.born { color: #8fffc8; } .pop-icon.died { color: #8695a6; animation-name: fade-up; }
+@keyframes rise { from { transform: translateY(14px) scale(.4); opacity: 0; } 30% { opacity: 1; } to { transform: translateY(-4px) scale(1); opacity: 0; } }
+@keyframes fade-up { from { opacity: .9; } to { transform: translateY(-14px); opacity: 0; } }
+
+/* Seabed + seismograph */
+#seabed {
+  position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--vh) * 90);
+  background: radial-gradient(120% 60% at 50% 100%, #1b1712 0 45%, transparent 46%);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 0 16px; z-index: 2;
+}
+.quake-panel { width: min(560px, 100%); }
+#seismo { width: 100%; height: 90px; display: block; margin: 8px 0; }
+#quakes { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+#quakes li { display: flex; gap: 10px; font-size: .78rem; color: #c9d6e0; }
+#quakes .mag { color: #ffb36b; min-width: 3.2em; font-weight: 500; }
+#quakes a { color: inherit; }
+
+/* ---------- Effects ---------- */
+#effects { position: absolute; inset: 0; pointer-events: none; z-index: 8; }
+.fx { position: absolute; pointer-events: none; }
+.bubble { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(220,245,255,.8); animation: bubble 2.4s ease-out forwards; }
+@keyframes bubble { to { transform: translate(var(--dx, 0), -160px) scale(1.4); opacity: 0; } }
+.ink { width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(#050005 30%, rgba(5,0,5,.6) 55%, transparent 70%); animation: ink 3s ease-out forwards; }
+@keyframes ink { from { transform: translate(-50%,-50%) scale(.2); opacity: .95; } to { transform: translate(-50%,-50%) scale(2.4); opacity: 0; } }
+.splash { width: 8px; height: 8px; border-radius: 50%; background: #e9f8ff; animation: splash 1s ease-out forwards; }
+@keyframes splash { to { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+.say {
+  font-size: .8rem; padding: 4px 9px; border-radius: 10px;
+  background: #fff; color: #102030; animation: say 1.6s ease-out forwards; white-space: nowrap;
+}
+@keyframes say { 0% { transform: translate(-50%, 0) scale(.6); opacity: 0; } 15% { opacity: 1; transform: translate(-50%, -10px) scale(1); } 100% { transform: translate(-50%, -40px); opacity: 0; } }
+.beamline { height: 4px; transform-origin: 0 50%; background: linear-gradient(90deg, #eaffef, #7dff9a); box-shadow: 0 0 14px #7dff9a; border-radius: 4px; animation: beam .5s ease-out forwards; }
+@keyframes beam { from { opacity: 1; } to { opacity: 0; } }
+.boom { width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(#fff, #ffd166 40%, #ff6b3d 70%, transparent 72%); animation: boom .8s ease-out forwards; }
+@keyframes boom { from { transform: translate(-50%,-50%) scale(.3); } to { transform: translate(-50%,-50%) scale(5); opacity: 0; } }
+.flash { position: fixed; inset: 0; background: #fff; z-index: 50; pointer-events: none; animation: flash 1.2s ease-out forwards; }
+@keyframes flash { from { opacity: .95; } to { opacity: 0; } }
+
+/* ---------- HUD ---------- */
+.gauge {
+  position: fixed; right: 12px; top: 50%; transform: translateY(-50%);
+  z-index: 20; width: 110px; text-align: right;
+  padding: 10px; border-radius: 12px;
+  background: rgba(1, 8, 16, .55);
+  backdrop-filter: blur(6px);
+}
+#gauge-value { margin: 4px 0 8px; font-size: 1rem; font-variant-numeric: tabular-nums; }
+.gauge-track { position: relative; height: 120px; width: 2px; margin-left: auto; background: linear-gradient(#fff, #5ea6d8 24%, #2f9fd4 25%, #000); }
+#gauge-dot { position: absolute; left: -5px; width: 12px; height: 12px; border-radius: 50%; background: var(--sonar); box-shadow: 0 0 10px var(--sonar); transform: translateY(-50%); }
+
+.logbook-btn {
+  position: fixed; left: 12px; bottom: 12px; z-index: 20;
+  padding: 10px 16px; border-radius: 999px;
+  background: var(--brass); color: #0a1622; text-decoration: none; font-size: .85rem; font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+.logbook-btn:hover { background: #e7b860; }
+.hint {
+  position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
+  margin: 0; z-index: 19; font-size: .72rem; color: rgba(230,245,255,.75);
+  background: rgba(1,8,16,.5); padding: 6px 12px; border-radius: 999px;
+  transition: opacity 1s;
+}
+.hint.gone { opacity: 0; }
+#toast {
+  position: fixed; left: 50%; top: 0; transform: translateX(-50%) translateY(-110%);
+  z-index: 30; padding: 10px 16px; border-radius: 10px;
+  background: rgba(3, 12, 24, .9); border: 1px solid var(--sonar);
+  font-size: .85rem; transition: transform .35s;
+}
+#toast.show { transform: translateX(-50%) translateY(16px); }
+
+a:focus-visible, button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 3px; }
+
+@media (max-width: 640px) {
+  .gauge { top: 10px; transform: none; width: auto; padding: 6px 10px; }
+  .gauge-track { display: none; }
+  #gauge-value { margin: 2px 0 0; font-size: .85rem; }
+  .hint { display: none; }
+  #iceberg { --ice-w: 80vw; left: 2vw; }
+  #buoy { right: 6px; width: 156px; }
+  #buoy .pop-panel { width: 156px; padding: 10px; }
+  .balloon-wrap { left: min(var(--x), calc(100% - 134px)); }
+  .pop-panel .big { font-size: 1.05rem; }
+  .capsule { width: 140px; padding: 9px 10px; }
+  .capsule strong { font-size: .9rem; }
+  .balloon-wrap { width: 128px; }
+  #moon-panel { max-width: calc(100vw - 120px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01s !important; animation-iteration-count: 1 !important; }
+}
