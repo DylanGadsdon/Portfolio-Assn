@@ -62,4 +62,48 @@ router.post('/', requireLogin, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ---------- Comments ----------
+// Anyone can comment (no account needed), so we're strict about lengths.
+
+// GET /api/posts/:id/comments — oldest first, like a conversation
+router.get('/:id/comments', async (req, res, next) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(404).json({ error: 'Post not found' });
+  try {
+    const comments = await query(
+      'SELECT id, name, body, created_at FROM comments WHERE post_id = $1 ORDER BY created_at ASC',
+      [req.params.id],
+    );
+    res.json(comments);
+  } catch (err) { next(err); }
+});
+
+// POST /api/posts/:id/comments  { name, body }
+router.post('/:id/comments', async (req, res, next) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(404).json({ error: 'Post not found' });
+  try {
+    // "Honeypot": a hidden field real people never see or fill in.
+    // Simple spam bots fill in every field, so if it has a value we quietly ignore it.
+    if (req.body?.website) return res.status(201).json({ ok: true });
+
+    const name = String(req.body?.name ?? '').trim();
+    const body = String(req.body?.body ?? '').trim();
+    if (!name || name.length > 60) {
+      return res.status(400).json({ error: 'Name is required (max 60 characters)' });
+    }
+    if (!body || body.length > 2000) {
+      return res.status(400).json({ error: 'Comment is required (max 2,000 characters)' });
+    }
+
+    const [post] = await query('SELECT id FROM posts WHERE id = $1', [req.params.id]);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    const [comment] = await query(
+      `INSERT INTO comments (post_id, name, body) VALUES ($1, $2, $3)
+       RETURNING id, name, body, created_at`,
+      [req.params.id, name, body],
+    );
+    res.status(201).json(comment);
+  } catch (err) { next(err); }
+});
+
 export default router;

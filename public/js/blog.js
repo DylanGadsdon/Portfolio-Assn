@@ -133,8 +133,67 @@ async function showPost(id) {
       el('h2', {}, post.title),
       el('div', { class: 'body' }, ...paragraphs),
     ),
+    commentsSection(post.id),
   );
   window.scrollTo(0, 0);
+}
+
+// ---------- Comments ----------
+
+function commentsSection(postId) {
+  const list = el('ol', { class: 'comment-list' });
+  const heading = el('h3', {}, 'Comments');
+
+  async function loadComments() {
+    const comments = await api.listComments(postId);
+    heading.textContent = `Comments (${comments.length})`;
+    list.replaceChildren(
+      ...(comments.length
+        ? comments.map(commentItem)
+        : [el('li', { class: 'empty' }, 'No comments yet. Be the first.')]),
+    );
+  }
+
+  const errorBox = el('p', { class: 'form-error', role: 'alert' });
+  const submit = el('button', { class: 'btn', type: 'submit' }, 'Post comment');
+  const form = el('form', { class: 'stack' },
+    el('label', {}, 'Name', el('input', { name: 'name', maxlength: 60, required: true, value: currentUser ?? '' })),
+    el('label', {}, 'Comment', el('textarea', { name: 'body', maxlength: 2000, required: true, rows: 4 })),
+    // Honeypot: hidden from people, visible to bots (see server/routes/posts.js)
+    el('label', { class: 'honeypot', 'aria-hidden': 'true' }, 'Website',
+      el('input', { name: 'website', tabindex: '-1', autocomplete: 'off' })),
+    errorBox,
+    el('div', { class: 'row' }, submit),
+  );
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    submit.disabled = true;
+    errorBox.textContent = '';
+    try {
+      await api.addComment(postId, Object.fromEntries(new FormData(form)));
+      form.elements.body.value = '';
+      await loadComments();
+    } catch (err) {
+      errorBox.textContent = err.message;
+    } finally {
+      submit.disabled = false;
+    }
+  });
+
+  loadComments().catch(() => list.replaceChildren(el('li', { class: 'error' }, 'Could not load comments.')));
+
+  return el('section', { class: 'comments' }, heading, list, form);
+}
+
+function commentItem(c) {
+  return el('li', { class: 'comment' },
+    el('div', { class: 'meta' },
+      el('span', { class: 'label' }, c.name),
+      el('span', { class: 'label' }, formatDate(c.created_at)),
+    ),
+    el('p', {}, c.body),
+  );
 }
 
 function showNewPost() {

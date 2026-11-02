@@ -20,3 +20,14 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Stage 4: remember who wrote each post
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS author_id INT REFERENCES users(id);
+
+-- Stage 5: comments. post_id links each comment to its post.
+-- ON DELETE CASCADE: if a post is deleted, its comments go with it.
+CREATE TABLE IF NOT EXISTS comments (
+  id          SERIAL PRIMARY KEY,
+  post_id     INT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  name        TEXT NOT NULL,
+  body        TEXT NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS comments_post_id_idx ON comments (post_id);

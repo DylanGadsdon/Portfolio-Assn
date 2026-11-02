@@ -23,6 +23,10 @@ export const api = {
   getPost: (id) => request('GET', `/api/posts/${id}`),
   createPost: (post) => request('POST', '/api/posts', post),
 
+  // Comments
+  listComments: (postId) => request('GET', `/api/posts/${postId}/comments`),
+  addComment: (postId, comment) => request('POST', `/api/posts/${postId}/comments`, comment),
+
   // Auth
   me: () => request('GET', '/api/auth/me'),
   login: (username, password) => request('POST', '/api/auth/login', { username, password }),
