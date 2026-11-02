@@ -8,3 +8,12 @@ CREATE TABLE IF NOT EXISTS posts (
   body        TEXT NOT NULL,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Stage 3: accounts. We never store the password itself, only a bcrypt hash of it.
+CREATE TABLE IF NOT EXISTS users (
+  id             SERIAL PRIMARY KEY,
+  username       TEXT NOT NULL UNIQUE,
+  password_hash  TEXT NOT NULL,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- (The "session" table for logins is created automatically by connect-pg-simple.)

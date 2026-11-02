@@ -7,22 +7,81 @@
 // "hashchange" event and redraw #app to match the new hash.
 
 import { el, formatDate, depthFor } from './dom.js';
+import { api } from './api.js';
 
 const app = document.querySelector('#app');
+const crew = document.querySelector('#crew');
 
-// ---------- Talking to the server ----------
+// Who is signed in? null = nobody. Filled in by refreshUser().
+let currentUser = null;
 
-async function getJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-  return res.json();
+// ---------- Sign in / sign out ----------
+
+async function refreshUser() {
+  const { username } = await api.me();
+  currentUser = username;
+  drawCrewPanel();
+}
+
+function drawCrewPanel() {
+  if (currentUser) {
+    crew.replaceChildren(
+      el('span', { class: 'label' }, `Signed in · ${currentUser}`),
+      el('button', { class: 'btn ghost', type: 'button', onclick: signOut }, 'Sign out'),
+    );
+  } else {
+    crew.replaceChildren(
+      el('button', { class: 'btn ghost', type: 'button', onclick: openSignIn }, 'Crew sign-in'),
+    );
+  }
+}
+
+function openSignIn() {
+  const errorBox = el('p', { class: 'form-error', role: 'alert' });
+
+  const form = el('form', { class: 'stack', method: 'dialog' },
+    el('p', { class: 'label' }, 'Crew only'),
+    el('h2', {}, 'Sign in'),
+    el('label', {}, 'Username', el('input', { name: 'username', autocomplete: 'username', required: true })),
+    el('label', {}, 'Password', el('input', { name: 'password', type: 'password', autocomplete: 'current-password', required: true })),
+    errorBox,
+    el('div', { class: 'row' },
+      el('button', { class: 'btn', type: 'submit' }, 'Sign in'),
+      el('button', { class: 'btn ghost', type: 'button', onclick: () => dialog.close() }, 'Cancel'),
+    ),
+  );
+
+  const dialog = el('dialog', { class: 'dialog' }, form);
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();                       // stop the browser's own form submit
+    const data = new FormData(form);
+    try {
+      await api.login(data.get('username'), data.get('password'));
+      dialog.close();
+      await refreshUser();
+      route();                                    // redraw so signed-in controls appear
+    } catch (err) {
+      errorBox.textContent = err.message;
+    }
+  });
+
+  dialog.addEventListener('close', () => dialog.remove());
+  document.body.append(dialog);
+  dialog.showModal();
+}
+
+async function signOut() {
+  await api.logout();
+  await refreshUser();
+  route();
 }
 
 // ---------- Views ----------
 
 async function showList() {
   app.replaceChildren(el('p', { class: 'empty' }, 'Pinging sonar…'));
-  const posts = await getJSON('/api/posts');
+  const posts = await api.listPosts();
 
   if (posts.length === 0) {
     app.replaceChildren(el('p', { class: 'empty' }, 'No logs yet.'));
@@ -49,7 +108,7 @@ async function showList() {
 
 async function showPost(id) {
   app.replaceChildren(el('p', { class: 'empty' }, 'Descending…'));
-  const post = await getJSON(`/api/posts/${id}`);
+  const post = await api.getPost(id);
 
   // Split the body on blank lines so each chunk becomes a <p>
   const paragraphs = post.body.split(/\n\s*\n/).map((text) => el('p', {}, text));
@@ -87,4 +146,5 @@ async function route() {
 }
 
 window.addEventListener('hashchange', route);
+refreshUser().catch(console.error);
 route();

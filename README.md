@@ -9,7 +9,7 @@ with interactive marine life. A submarine in the ocean takes you to the journal 
 - [x] Stage 0 — Express server, project structure, secrets handling
 - [x] Stage 1 — Post list and single post view
 - [x] Stage 2 — Posts stored in PostgreSQL (Neon)
-- [ ] Stage 3 — Sign in / sign out
+- [x] Stage 3 — Sign in / sign out
 - [ ] Stage 4 — Add post (signed-in only)
 - [ ] Stage 5 — Comments stored in the database
 - [ ] Stage 6 — Search / filter
@@ -24,11 +24,13 @@ with interactive marine life. A submarine in the ocean takes you to the journal 
 2. `npm install`
 3. Copy `.env.example` to `.env` and fill in the values (see below).
 4. `npm run db:setup` creates the tables and adds starter posts. Safe to run again.
-5. `npm run dev` and open http://localhost:3000 (the journal is at /blog)
+5. `npm run create-user` makes your login (there is no public sign-up, on purpose).
+6. `npm run dev` and open http://localhost:3000 (the journal is at /blog)
 
 ### Services
 
 - **Neon (PostgreSQL):** create a free project at neon.tech, click Connect, copy the connection string into `DATABASE_URL`.
+- **SESSION_SECRET:** any long random string. Generate one with `node -e "console.log(crypto.randomUUID()+crypto.randomUUID())"`.
 
 ## Intentionally left out
 
