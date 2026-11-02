@@ -21,6 +21,7 @@ export const api = {
   // Posts
   listPosts: () => request('GET', '/api/posts'),
   getPost: (id) => request('GET', `/api/posts/${id}`),
+  createPost: (post) => request('POST', '/api/posts', post),
 
   // Auth
   me: () => request('GET', '/api/auth/me'),

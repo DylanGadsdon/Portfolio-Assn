@@ -84,7 +84,7 @@ async function showList() {
   const posts = await api.listPosts();
 
   if (posts.length === 0) {
-    app.replaceChildren(el('p', { class: 'empty' }, 'No logs yet.'));
+    app.replaceChildren(toolbar(), el('p', { class: 'empty' }, 'No logs yet.'));
     return;
   }
 
@@ -103,7 +103,17 @@ async function showList() {
     ),
   );
 
-  app.replaceChildren(el('ul', { class: 'post-list' }, ...items));
+  app.replaceChildren(toolbar(), el('ul', { class: 'post-list' }, ...items));
+}
+
+// The row above the list. The "New log" button only appears when signed in.
+function toolbar() {
+  return el('div', { class: 'toolbar' },
+    el('p', { class: 'label' }, 'All logs'),
+    currentUser
+      ? el('a', { class: 'btn', href: '#/new' }, '+ New log')
+      : null,
+  );
 }
 
 async function showPost(id) {
@@ -127,6 +137,54 @@ async function showPost(id) {
   window.scrollTo(0, 0);
 }
 
+function showNewPost() {
+  if (!currentUser) {
+    app.replaceChildren(
+      el('p', { class: 'empty' }, 'Sign in to write a new log.'),
+      el('a', { class: 'back', href: '#/' }, '← Back to the logbook'),
+    );
+    return;
+  }
+
+  const errorBox = el('p', { class: 'form-error', role: 'alert' });
+  const submit = el('button', { class: 'btn', type: 'submit' }, 'Publish log');
+
+  const form = el('form', { class: 'stack sheet-form' },
+    el('label', {}, 'Title', el('input', { name: 'title', maxlength: 150, required: true })),
+    el('label', {}, 'Category',
+      el('select', { name: 'category' },
+        ...['Journal', 'Film', 'Brand', 'Campaign', 'Experiments', 'Music', 'Code']
+          .map((c) => el('option', { value: c }, c)),
+      ),
+    ),
+    el('label', {}, 'Text (leave a blank line between paragraphs)',
+      el('textarea', { name: 'body', required: true }),
+    ),
+    errorBox,
+    el('div', { class: 'row' }, submit, el('a', { class: 'btn ghost', href: '#/' }, 'Cancel')),
+  );
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    submit.disabled = true;
+    submit.textContent = 'Publishing…';
+    const data = Object.fromEntries(new FormData(form));   // { title, category, body }
+    try {
+      const post = await api.createPost(data);
+      location.hash = `#/post/${post.id}`;                  // jump to the new post
+    } catch (err) {
+      errorBox.textContent = err.message;
+      submit.disabled = false;
+      submit.textContent = 'Publish log';
+    }
+  });
+
+  app.replaceChildren(
+    el('a', { class: 'back', href: '#/' }, '← Back to the logbook'),
+    el('div', { class: 'compose' }, el('p', { class: 'label' }, 'New log'), el('h2', {}, 'Write an entry'), form),
+  );
+}
+
 // ---------- Router ----------
 
 async function route() {
@@ -135,6 +193,7 @@ async function route() {
 
   try {
     if (match) await showPost(match[1]);
+    else if (hash === '#/new') showNewPost();
     else await showList();
   } catch (err) {
     console.error(err);
@@ -146,5 +205,5 @@ async function route() {
 }
 
 window.addEventListener('hashchange', route);
-refreshUser().catch(console.error);
-route();
+// Find out who's signed in first, so the right buttons show on the first draw
+refreshUser().catch(console.error).finally(route);

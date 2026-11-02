@@ -10,7 +10,7 @@ with interactive marine life. A submarine in the ocean takes you to the journal 
 - [x] Stage 1 — Post list and single post view
 - [x] Stage 2 — Posts stored in PostgreSQL (Neon)
 - [x] Stage 3 — Sign in / sign out
-- [ ] Stage 4 — Add post (signed-in only)
+- [x] Stage 4 — Add post (signed-in only)
 - [ ] Stage 5 — Comments stored in the database
 - [ ] Stage 6 — Search / filter
 - [ ] Stage 7 — AI summary (OpenRouter)
