@@ -1,0 +1,148 @@
+/* The Logbook — the readable side of the site.
+   Submarine interior: deep navy hull, brass details, paper-like reading surface. */
+
+:root {
+  --hull: #0a1622;
+  --hull-2: #10202f;
+  --brass: #d4a24c;
+  --brass-dim: #8f6d33;
+  --paper: #f4efe4;
+  --ink: #1c1a17;
+  --ink-soft: #5b564c;
+  --rule: #d9d0bd;
+  --sonar: #5fe0c4;
+  --danger: #c4523a;
+  --radius: 14px;
+  --font-head: 'Fraunces', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--hull);
+  color: var(--paper);
+  font-family: var(--font-head);
+  font-size: 18px;
+  line-height: 1.6;
+  /* faint rivet grid on the hull */
+  background-image: radial-gradient(circle, rgba(212,162,76,0.08) 1px, transparent 1.5px);
+  background-size: 28px 28px;
+}
+
+a { color: inherit; }
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin: 0;
+}
+
+/* ---------- Header ---------- */
+.hull {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 16px 8px;
+}
+.surface-link {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  text-decoration: none;
+  color: var(--sonar);
+}
+.surface-link:hover { text-decoration: underline; }
+
+.masthead { padding: 40px 0 24px; border-bottom: 1px solid var(--brass-dim); }
+.masthead h1 {
+  font-size: clamp(2.6rem, 8vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1;
+  margin: 8px 0 12px;
+  letter-spacing: -0.02em;
+}
+.masthead h1 a { text-decoration: none; }
+.tagline { color: #b9c3cc; margin: 0; max-width: 34ch; }
+
+/* ---------- Main reading area ---------- */
+.porthole {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+  min-height: 50vh;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+/* Post list */
+.post-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
+
+.post-card {
+  display: block;
+  text-decoration: none;
+  background: var(--hull-2);
+  border: 1px solid rgba(212,162,76,0.25);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  transition: border-color .2s, transform .2s;
+}
+.post-card:hover, .post-card:focus-visible {
+  border-color: var(--brass);
+  transform: translateY(-2px);
+  outline: none;
+}
+.post-card h2 { margin: 6px 0 8px; font-size: 1.5rem; line-height: 1.2; font-weight: 600; }
+.post-card p { margin: 0; color: #b9c3cc; font-size: 1rem; }
+.meta { display: flex; gap: 14px; flex-wrap: wrap; }
+
+/* Single post — paper sheet for reading */
+.sheet {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: clamp(22px, 5vw, 56px);
+}
+.sheet .label { color: var(--brass-dim); }
+.sheet h2 {
+  font-size: clamp(2rem, 6vw, 3rem);
+  line-height: 1.1;
+  margin: 10px 0 24px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.sheet .body p { margin: 0 0 1.1em; max-width: 65ch; }
+
+.back {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--sonar);
+  text-decoration: none;
+  margin-bottom: 18px;
+}
+.back:hover { text-decoration: underline; }
+
+.empty, .error { font-family: var(--font-mono); color: #b9c3cc; }
+.error { color: var(--danger); }
+
+.hull-foot {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+  border-top: 1px solid rgba(212,162,76,0.25);
+}
+
+@media (max-width: 560px) {
+  body { font-size: 17px; }
+  .post-card { padding: 16px; }
+}
