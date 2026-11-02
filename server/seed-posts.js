@@ -10,22 +10,14 @@ export const seedPosts = [
     category: 'Film',
     featured: true,
     video_url: '',   // ← YouTube link goes here
-    body: `A short AI film that started with the very first image I ever made in Midjourney: a black panther and a tortoise crossing a New York street, with a line of classic cars waiting at the lights.
-
-I rebuilt that frame from scratch and used it as the starting point for video, then let the story grow from there, alligator included.
-
-Made with Midjourney for the look, then animated as short clips and cut together.`,
+    body: `Write-up coming soon.`,
   },
   {
     title: 'GTA VI: the trailer',
     category: 'Film',
     featured: true,
     video_url: '',   // ← YouTube link goes here
-    body: `A fan trailer built entirely with AI.
-
-Jason and Lucia rob a sun-bleached Florida convenience store, then burst into the next shop to do it again. Inside: an older Franklin, with Chop at his feet, buying a boxed copy of GTA VI. He turns round and recognises them straight away. Jason doesn't recognise himself, even with his own face on the cover.
-
-An old protagonist telling the new one he's famous.`,
+    body: `Write-up coming soon.`,
   },
   {
     title: 'Kill the opera',
