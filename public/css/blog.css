@@ -242,3 +242,18 @@ textarea { min-height: 180px; resize: vertical; line-height: 1.5; }
 }
 .chip:hover { border-color: var(--brass); color: var(--paper); }
 .chip[aria-pressed="true"] { background: var(--sonar); border-color: var(--sonar); color: var(--hull); }
+
+/* ---------- AI summary ---------- */
+.summary {
+  margin: 0 0 28px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  background: #e9f6f2;
+  border-left: 3px solid #2e9c84;
+  max-width: 65ch;
+}
+.summary[hidden] { display: none; }
+.summary .label { color: #2e7d6b; }
+.summary p:not(.label) { margin: 6px 0 0; font-style: italic; }
+.summary p:empty { display: none; }
+.btn.small { margin-top: 10px; padding: 6px 12px; font-size: 0.75rem; color: #2e7d6b; border-color: #2e9c84; }

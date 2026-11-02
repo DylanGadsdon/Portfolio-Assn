@@ -24,6 +24,7 @@ export const api = {
   listCategories: () => request('GET', '/api/posts/categories'),
   getPost: (id) => request('GET', `/api/posts/${id}`),
   createPost: (post) => request('POST', '/api/posts', post),
+  summarise: (id) => request('POST', `/api/posts/${id}/summary`),
 
   // Comments
   listComments: (postId) => request('GET', `/api/posts/${postId}/comments`),

@@ -31,3 +31,6 @@ CREATE TABLE IF NOT EXISTS comments (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS comments_post_id_idx ON comments (post_id);
+
+-- Stage 7: short AI-written summary shown with each post
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS summary TEXT;

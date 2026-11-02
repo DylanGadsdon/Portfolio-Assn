@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import { query } from '../db.js';
 import { requireLogin } from './auth.js';
+import { summarise } from '../ai.js';
 
 const router = Router();
 
@@ -34,7 +35,7 @@ router.get('/', async (req, res, next) => {
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const posts = await query(
-      `SELECT id, title, category, body, created_at FROM posts ${where} ORDER BY created_at DESC`,
+      `SELECT id, title, category, body, summary, created_at FROM posts ${where} ORDER BY created_at DESC`,
       params,
     );
     res.json(posts);
@@ -54,7 +55,7 @@ router.get('/:id', async (req, res, next) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(404).json({ error: 'Post not found' });
   try {
     const [post] = await query(
-      'SELECT id, title, category, body, created_at FROM posts WHERE id = $1',
+      'SELECT id, title, category, body, summary, created_at FROM posts WHERE id = $1',
       [req.params.id],
     );
     if (!post) return res.status(404).json({ error: 'Post not found' });
@@ -85,10 +86,43 @@ router.post('/', requireLogin, async (req, res, next) => {
     const [post] = await query(
       `INSERT INTO posts (title, category, body, author_id)
        VALUES ($1, $2, $3, $4)
-       RETURNING id, title, category, body, created_at`,
+       RETURNING id, title, category, body, summary, created_at`,
       [title, category, body, req.session.userId],
     );
+
+    // Ask the AI for a summary. If it fails, the post is still saved:
+    // the summary is a bonus, not something that should block publishing.
+    try {
+      post.summary = await summarise(title, body);
+      if (post.summary) {
+        await query('UPDATE posts SET summary = $1 WHERE id = $2', [post.summary, post.id]);
+      }
+    } catch (err) {
+      console.error('AI summary failed:', err.message);
+    }
+
     res.status(201).json(post);
+  } catch (err) { next(err); }
+});
+
+// POST /api/posts/:id/summary — (re)generate the AI summary for an existing post
+router.post('/:id/summary', requireLogin, async (req, res, next) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(404).json({ error: 'Post not found' });
+  try {
+    const [post] = await query('SELECT id, title, body FROM posts WHERE id = $1', [req.params.id]);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    let summary;
+    try {
+      summary = await summarise(post.title, post.body);
+    } catch (err) {
+      console.error('AI summary failed:', err.message);
+      return res.status(502).json({ error: 'The AI did not answer. Try again in a moment.' });
+    }
+    if (!summary) return res.status(503).json({ error: 'AI summaries are not set up (no API key)' });
+
+    await query('UPDATE posts SET summary = $1 WHERE id = $2', [summary, post.id]);
+    res.json({ summary });
   } catch (err) { next(err); }
 });
 

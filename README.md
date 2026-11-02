@@ -13,7 +13,7 @@ with interactive marine life. A submarine in the ocean takes you to the journal 
 - [x] Stage 4 — Add post (signed-in only)
 - [x] Stage 5 — Comments stored in the database
 - [x] Stage 6 — Search / filter
-- [ ] Stage 7 — AI summary (OpenRouter)
+- [x] Stage 7 — AI summary (OpenRouter)
 - [ ] Stage 8–11 — Ocean, creatures, live data, space
 - [ ] Stage 12 — Zoom out: Earth with live satellite positions (CelesTrak), solar system, galaxy, universe, Big Bang
 - [ ] Stage 13 — Deploy + slides
@@ -31,6 +31,7 @@ with interactive marine life. A submarine in the ocean takes you to the journal 
 
 - **Neon (PostgreSQL):** create a free project at neon.tech, click Connect, copy the connection string into `DATABASE_URL`.
 - **SESSION_SECRET:** any long random string. Generate one with `node -e "console.log(crypto.randomUUID()+crypto.randomUUID())"`.
+- **OpenRouter:** create a key at openrouter.ai → Keys and put it in `OPENROUTER_API_KEY`. Without a key the blog still works; posts just have no AI summary.
 
 ## Intentionally left out
 

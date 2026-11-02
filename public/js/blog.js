@@ -145,7 +145,8 @@ async function drawResults(results) {
           el('span', { class: 'label' }, formatDate(post.created_at)),
         ),
         el('h2', {}, post.title),
-        el('p', {}, post.body.split('\n')[0]),   // first paragraph as a teaser
+        // Teaser: the AI summary if there is one, otherwise the first paragraph
+        el('p', {}, post.summary || post.body.split('\n')[0]),
       ),
     ),
   );
@@ -178,11 +179,44 @@ async function showPost(id) {
         el('span', { class: 'label' }, formatDate(post.created_at)),
       ),
       el('h2', {}, post.title),
+      summaryBox(post),
       el('div', { class: 'body' }, ...paragraphs),
     ),
     commentsSection(post.id),
   );
   window.scrollTo(0, 0);
+}
+
+// ---------- AI summary ----------
+
+function summaryBox(post) {
+  const text = el('p', {}, post.summary ?? '');
+  const box = el('aside', { class: 'summary', hidden: !post.summary && !currentUser },
+    el('p', { class: 'label' }, '✦ AI summary'),
+    text,
+  );
+
+  // Signed-in crew get a button to (re)generate it
+  if (currentUser) {
+    const button = el('button', { class: 'btn ghost small', type: 'button' },
+      post.summary ? 'Regenerate' : 'Generate summary');
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      button.textContent = 'Thinking…';
+      try {
+        const { summary } = await api.summarise(post.id);
+        text.textContent = summary;
+        button.textContent = 'Regenerate';
+      } catch (err) {
+        text.textContent = err.message;
+        button.textContent = 'Try again';
+      } finally {
+        button.disabled = false;
+      }
+    });
+    box.append(button);
+  }
+  return box;
 }
 
 // ---------- Comments ----------
