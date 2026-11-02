@@ -12,7 +12,7 @@ with interactive marine life. A submarine in the ocean takes you to the journal 
 - [x] Stage 3 — Sign in / sign out
 - [x] Stage 4 — Add post (signed-in only)
 - [x] Stage 5 — Comments stored in the database
-- [ ] Stage 6 — Search / filter
+- [x] Stage 6 — Search / filter
 - [ ] Stage 7 — AI summary (OpenRouter)
 - [ ] Stage 8–11 — Ocean, creatures, live data, space
 - [ ] Stage 12 — Zoom out: Earth with live satellite positions (CelesTrak), solar system, galaxy, universe, Big Bang

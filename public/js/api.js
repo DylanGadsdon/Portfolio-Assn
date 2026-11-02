@@ -19,7 +19,9 @@ async function request(method, url, body) {
 
 export const api = {
   // Posts
-  listPosts: () => request('GET', '/api/posts'),
+  // URLSearchParams turns { q: 'elf', category: 'Film' } into "q=elf&category=Film"
+  listPosts: (filters = {}) => request('GET', `/api/posts?${new URLSearchParams(filters)}`),
+  listCategories: () => request('GET', '/api/posts/categories'),
   getPost: (id) => request('GET', `/api/posts/${id}`),
   createPost: (post) => request('POST', '/api/posts', post),
 

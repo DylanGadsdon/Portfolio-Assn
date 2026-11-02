@@ -9,13 +9,43 @@ import { requireLogin } from './auth.js';
 
 const router = Router();
 
-// GET /api/posts — all posts, newest first
+// GET /api/posts — newest first.
+// Optional filters in the URL:  /api/posts?q=elf&category=Film
+// We build the WHERE clause piece by piece, but the values still go in
+// as $1, $2… placeholders, never pasted into the SQL string.
 router.get('/', async (req, res, next) => {
   try {
+    const conditions = [];
+    const params = [];
+
+    const q = String(req.query.q ?? '').trim().slice(0, 100);
+    if (q) {
+      // Escape % and _ so they're searched for literally, not as wildcards
+      params.push(`%${q.replace(/[\\%_]/g, '\\$&')}%`);
+      // ILIKE = case-insensitive match. Search both title and body.
+      conditions.push(`(title ILIKE $${params.length} OR body ILIKE $${params.length})`);
+    }
+
+    const category = String(req.query.category ?? '').trim();
+    if (category) {
+      params.push(category);
+      conditions.push(`category = $${params.length}`);
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const posts = await query(
-      'SELECT id, title, category, body, created_at FROM posts ORDER BY created_at DESC',
+      `SELECT id, title, category, body, created_at FROM posts ${where} ORDER BY created_at DESC`,
+      params,
     );
     res.json(posts);
+  } catch (err) { next(err); }
+});
+
+// GET /api/posts/categories — the categories that actually have posts
+router.get('/categories', async (req, res, next) => {
+  try {
+    const rows = await query('SELECT category, COUNT(*)::int AS count FROM posts GROUP BY category ORDER BY category');
+    res.json(rows);
   } catch (err) { next(err); }
 });
 

@@ -79,12 +79,59 @@ async function signOut() {
 
 // ---------- Views ----------
 
+// The current search, kept between visits to the list
+const filters = { q: '', category: '' };
+
 async function showList() {
-  app.replaceChildren(el('p', { class: 'empty' }, 'Pinging sonar…'));
-  const posts = await api.listPosts();
+  // Controls are built once; only the results area redraws while typing,
+  // so the search box keeps its focus.
+  const results = el('div', { class: 'results' }, el('p', { class: 'empty' }, 'Pinging sonar…'));
+
+  const search = el('input', {
+    type: 'search',
+    placeholder: 'Search the logs…',
+    'aria-label': 'Search posts',
+    value: filters.q,
+  });
+
+  // "Debounce": wait until typing pauses for 250 ms before asking the server,
+  // instead of sending a request on every single keystroke.
+  let timer;
+  search.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      filters.q = search.value.trim();
+      drawResults(results);
+    }, 250);
+  });
+
+  const chips = el('div', { class: 'chips', role: 'group', 'aria-label': 'Filter by category' });
+  async function drawChips() {
+    const categories = await api.listCategories();
+    const all = [{ category: '', label: 'All' }, ...categories.map((c) => ({ ...c, label: c.category }))];
+    chips.replaceChildren(...all.map((c) =>
+      el('button', {
+        type: 'button',
+        class: 'chip',
+        'aria-pressed': String(filters.category === c.category),
+        onclick: () => {
+          filters.category = c.category;
+          drawChips();
+          drawResults(results);
+        },
+      }, c.label),
+    ));
+  }
+
+  app.replaceChildren(toolbar(), el('div', { class: 'filters' }, search, chips), results);
+  await Promise.all([drawChips(), drawResults(results)]);
+}
+
+async function drawResults(results) {
+  const posts = await api.listPosts(filters);
 
   if (posts.length === 0) {
-    app.replaceChildren(toolbar(), el('p', { class: 'empty' }, 'No logs yet.'));
+    results.replaceChildren(el('p', { class: 'empty' }, 'Nothing on sonar. Try another search.'));
     return;
   }
 
@@ -103,7 +150,7 @@ async function showList() {
     ),
   );
 
-  app.replaceChildren(toolbar(), el('ul', { class: 'post-list' }, ...items));
+  results.replaceChildren(el('ul', { class: 'post-list' }, ...items));
 }
 
 // The row above the list. The "New log" button only appears when signed in.
