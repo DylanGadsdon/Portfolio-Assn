@@ -6,7 +6,7 @@
 // Changing the part after # doesn't reload the page. We listen for the
 // "hashchange" event and redraw #app to match the new hash.
 
-import { el, formatDate, depthFor } from './dom.js';
+import { el, formatDate, depthFor, linkify, youtubePlayer } from './dom.js';
 import { api } from './api.js';
 
 const app = document.querySelector('#app');
@@ -168,8 +168,9 @@ async function showPost(id) {
   app.replaceChildren(el('p', { class: 'empty' }, 'Descending…'));
   const post = await api.getPost(id);
 
-  // Split the body on blank lines so each chunk becomes a <p>
-  const paragraphs = post.body.split(/\n\s*\n/).map((text) => el('p', {}, text));
+  // Split the body on blank lines so each chunk becomes a <p>.
+  // linkify() turns any web addresses in the text into real links.
+  const paragraphs = post.body.split(/\n\s*\n/).map((text) => el('p', {}, ...linkify(text)));
 
   app.replaceChildren(
     el('a', { class: 'back', href: '#/' }, '← Back to the logbook'),
@@ -179,8 +180,12 @@ async function showPost(id) {
         el('span', { class: 'label' }, formatDate(post.created_at)),
       ),
       el('h2', {}, post.title),
+      post.youtube_id ? youtubePlayer(post.youtube_id, post.title) : null,
       summaryBox(post),
       el('div', { class: 'body' }, ...paragraphs),
+      post.link_url
+        ? el('a', { class: 'btn project-link', href: post.link_url, target: '_blank', rel: 'noopener' }, 'Open the project ↗')
+        : null,
     ),
     commentsSection(post.id),
   );
@@ -300,6 +305,13 @@ function showNewPost() {
     el('label', {}, 'Text (leave a blank line between paragraphs)',
       el('textarea', { name: 'body', required: true }),
     ),
+    el('label', {}, 'YouTube link (optional)',
+      el('input', { name: 'video_url', type: 'url', placeholder: 'https://youtu.be/…' })),
+    el('label', {}, 'Project link (optional, e.g. Figma)',
+      el('input', { name: 'link_url', type: 'url', placeholder: 'https://…' })),
+    el('label', { class: 'check' },
+      el('input', { name: 'featured', type: 'checkbox' }),
+      'Feature this in the iceberg (portfolio)'),
     errorBox,
     el('div', { class: 'row' }, submit, el('a', { class: 'btn ghost', href: '#/' }, 'Cancel')),
   );

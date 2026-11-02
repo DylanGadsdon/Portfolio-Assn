@@ -5,6 +5,7 @@ import { art } from './art.js';
 import { spawnCreatures, startLoop } from './creatures.js';
 import { startLiveData } from './livedata.js';
 import { setupRaid } from './raid.js';
+import { placePortfolio } from './portfolio.js';
 
 measure();
 
@@ -32,33 +33,6 @@ function drawStars() {
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
-  }
-}
-
-// ---------- Portfolio capsules frozen in the iceberg ----------
-async function placeCapsules() {
-  const box = document.querySelector('#capsules');
-  try {
-    const res = await fetch('/api/posts');
-    if (!res.ok) throw new Error(res.status);
-    const posts = (await res.json()).slice(0, 8);
-    // Spread them down the underwater part of the iceberg (vh from its top)
-    const top = 70, bottom = 400;
-    const step = posts.length > 1 ? (bottom - top) / (posts.length - 1) : 0;
-    posts.forEach((post, i) => {
-      const a = document.createElement('a');
-      a.className = 'capsule';
-      a.href = `/blog#/post/${post.id}`;
-      a.style.top = `calc(var(--vh) * ${top + i * step})`;
-      a.style.left = i % 2 ? '66%' : '34%';
-      const depth = Math.round(-metresAt(SEA - 38 + top + i * step));
-      a.innerHTML = `<span class="label"></span><strong></strong>`;
-      a.querySelector('.label').textContent = `${post.category} · ${depth.toLocaleString('en-GB')} m`;
-      a.querySelector('strong').textContent = post.title;
-      box.append(a);
-    });
-  } catch (err) {
-    console.warn('Could not load posts for the iceberg', err);
   }
 }
 
@@ -104,7 +78,7 @@ window.scrollTo(0, px(SEA) - window.innerHeight * 0.62);
 document.querySelector('#iceberg').classList.add('rising');
 updateGauge();
 
-placeCapsules();
+placePortfolio();
 spawnCreatures();
 startLoop();
 startLiveData();

@@ -34,3 +34,9 @@ CREATE INDEX IF NOT EXISTS comments_post_id_idx ON comments (post_id);
 
 -- Stage 7: short AI-written summary shown with each post
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS summary TEXT;
+
+-- Portfolio: a YouTube video, an outside link (e.g. Figma), and whether the
+-- piece is "featured" (frozen into the iceberg on the front page)
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS video_url TEXT;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS link_url  TEXT;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS featured  BOOLEAN NOT NULL DEFAULT false;

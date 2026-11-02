@@ -30,3 +30,32 @@ export function formatDate(iso) {
 export function depthFor(id) {
   return Number(id) * 120;
 }
+
+// Turn "see https://figma.com/x for more" into text + a real <a> + text.
+// Built with DOM nodes (not innerHTML), so it stays safe from XSS.
+export function linkify(text) {
+  const parts = [];
+  let last = 0;
+  for (const match of text.matchAll(/https?:\/\/[^\s<>"]+[^\s<>".,;:!?)]/g)) {
+    parts.push(text.slice(last, match.index));
+    parts.push(el('a', { href: match[0], target: '_blank', rel: 'noopener' }, match[0]));
+    last = match.index + match[0].length;
+  }
+  parts.push(text.slice(last));
+  return parts;
+}
+
+// A responsive YouTube player. youtube-nocookie.com = YouTube's privacy mode:
+// no tracking cookies until the viewer presses play.
+export function youtubePlayer(id, title, { autoplay = false } = {}) {
+  const params = new URLSearchParams({ rel: '0', modestbranding: '1', ...(autoplay ? { autoplay: '1' } : {}) });
+  return el('div', { class: 'video' },
+    el('iframe', {
+      src: `https://www.youtube-nocookie.com/embed/${id}?${params}`,
+      title: `Video: ${title}`,
+      allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen',
+      allowfullscreen: '',
+      loading: 'lazy',
+    }),
+  );
+}

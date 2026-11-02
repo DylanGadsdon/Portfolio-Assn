@@ -2,7 +2,7 @@
 
 Individual blog project for **Berghs · Programming & Methods (ACE2627)**.
 
-The site is one vertical world: deep space at the top, an iceberg with my name on it at sea level, and the ocean below. My portfolio pieces are frozen into the iceberg at different depths. A submarine in the twilight zone takes you to **The Logbook**, the blog itself, on its own readable page. From orbit you can **zoom out** past the satellites, the planets and the Milky Way, all the way to the Big Bang.
+The site is one vertical world: deep space at the top, an iceberg with my name on it at sea level, and the ocean below. My best work is frozen into the iceberg: click a piece and its film plays over the ocean. A submarine in the twilight zone takes you to **The Logbook**, the blog itself, on its own readable page. From orbit you can **zoom out** past the satellites, the planets and the Milky Way, all the way to the Big Bang.
 
 - **Persona:** Dylan, AI content creator and creative technologist
 - **Audience:** classmates, teachers, and creative clients looking at my AI film, brand and campaign work
@@ -21,7 +21,7 @@ The site is one vertical world: deep space at the top, an iceberg with my name o
 | # | Task | How |
 |---|---|---|
 | 1 | Content and navigation | Post list and single post view with hash routing (`#/post/3`); back link returns to the list |
-| 2 | Interaction | Signed-in users write posts (`POST /api/posts`). **PD:** comments stored in PostgreSQL |
+| 2 | Interaction | Signed-in users write posts (`POST /api/posts`), optionally with a YouTube video, a project link, and a "feature in the iceberg" flag. **PD:** comments stored in PostgreSQL |
 | 3 | Layout and readability | Readable serif "paper" layout for posts, responsive from 320 px phones to desktop |
 | 4 | JavaScript feature | Search (debounced, server-side `ILIKE` on title and body) plus category filter chips |
 | 5 | External API | **Open-Meteo** weather for 5 cities, **USGS** earthquakes (seismograph), **CelesTrak** satellite orbits |

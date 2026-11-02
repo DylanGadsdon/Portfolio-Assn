@@ -17,9 +17,10 @@ if (count === 0) {
   const reversed = [...seedPosts].reverse();
   for (const [i, p] of reversed.entries()) {
     await query(
-      `INSERT INTO posts (title, category, body, created_at)
-       VALUES ($1, $2, $3, now() - ($4 || ' days')::interval)`,
-      [p.title, p.category, p.body, reversed.length - 1 - i],
+      `INSERT INTO posts (title, category, body, video_url, link_url, featured, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, now() - ($7 || ' days')::interval)`,
+      [p.title, p.category, p.body, p.video_url ?? null, p.link_url ?? null, p.featured ?? false,
+       reversed.length - 1 - i],
     );
   }
   console.log(`Added ${seedPosts.length} starter posts.`);

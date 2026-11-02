@@ -7,11 +7,18 @@ import { Router } from 'express';
 import { query } from '../db.js';
 import { requireLogin } from './auth.js';
 import { summarise } from '../ai.js';
+import { youtubeId, safeHttpUrl } from '../links.js';
+
+// The columns we send to the browser, in one place
+const FIELDS = 'id, title, category, body, summary, video_url, link_url, featured, created_at';
+
+// Add youtube_id so the browser can build the player without parsing URLs itself
+const withVideo = (post) => ({ ...post, youtube_id: post.video_url ? youtubeId(post.video_url) : null });
 
 const router = Router();
 
 // GET /api/posts — newest first.
-// Optional filters in the URL:  /api/posts?q=elf&category=Film
+// Optional filters in the URL:  /api/posts?q=elf&category=Film&featured=1
 // We build the WHERE clause piece by piece, but the values still go in
 // as $1, $2… placeholders, never pasted into the SQL string.
 router.get('/', async (req, res, next) => {
@@ -33,12 +40,15 @@ router.get('/', async (req, res, next) => {
       conditions.push(`category = $${params.length}`);
     }
 
+    // featured=1 → only the portfolio pieces shown in the iceberg
+    if (req.query.featured === '1') conditions.push('featured = true');
+
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const posts = await query(
-      `SELECT id, title, category, body, summary, created_at FROM posts ${where} ORDER BY created_at DESC`,
+      `SELECT ${FIELDS} FROM posts ${where} ORDER BY created_at DESC`,
       params,
     );
-    res.json(posts);
+    res.json(posts.map(withVideo));
   } catch (err) { next(err); }
 });
 
@@ -54,12 +64,9 @@ router.get('/categories', async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(404).json({ error: 'Post not found' });
   try {
-    const [post] = await query(
-      'SELECT id, title, category, body, summary, created_at FROM posts WHERE id = $1',
-      [req.params.id],
-    );
+    const [post] = await query(`SELECT ${FIELDS} FROM posts WHERE id = $1`, [req.params.id]);
     if (!post) return res.status(404).json({ error: 'Post not found' });
-    res.json(post);
+    res.json(withVideo(post));
   } catch (err) { next(err); }
 });
 
@@ -82,12 +89,24 @@ router.post('/', requireLogin, async (req, res, next) => {
       return res.status(400).json({ error: 'Category is too long (max 30 characters)' });
     }
 
+    // Optional extras: a YouTube video, an outside link, and "feature in the iceberg"
+    const rawVideo = String(req.body?.video_url ?? '').trim();
+    const id = rawVideo ? youtubeId(rawVideo) : null;
+    if (rawVideo && !id) return res.status(400).json({ error: 'That doesn’t look like a YouTube link' });
+    const videoUrl = id ? `https://www.youtube.com/watch?v=${id}` : null;
+
+    const rawLink = String(req.body?.link_url ?? '').trim();
+    const linkUrl = rawLink ? safeHttpUrl(rawLink) : null;
+    if (rawLink && !linkUrl) return res.status(400).json({ error: 'The project link must start with https://' });
+
+    const featured = req.body?.featured === true || req.body?.featured === 'on';
+
     // RETURNING gives us back the new row, including the id Postgres assigned
     const [post] = await query(
-      `INSERT INTO posts (title, category, body, author_id)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, title, category, body, summary, created_at`,
-      [title, category, body, req.session.userId],
+      `INSERT INTO posts (title, category, body, video_url, link_url, featured, author_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING ${FIELDS}`,
+      [title, category, body, videoUrl, linkUrl, featured, req.session.userId],
     );
 
     // Ask the AI for a summary. If it fails, the post is still saved:
@@ -101,7 +120,7 @@ router.post('/', requireLogin, async (req, res, next) => {
       console.error('AI summary failed:', err.message);
     }
 
-    res.status(201).json(post);
+    res.status(201).json(withVideo(post));
   } catch (err) { next(err); }
 });
 
