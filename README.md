@@ -1,18 +1,20 @@
-# Iceberg — Dylan's portfolio journal
+# The Illegal Archive — Dylan's iceberg blog
 
 Individual blog project for **Berghs · Programming & Methods (ACE2627)**.
 
-The home page is a wall of my work drifting on black (in the style of the Apple TV photo screensaver), with one tile always in the middle: **the Iceberg**. That opens a cinematic, scrollable world built around an iceberg photograph: space at the top, the iceberg at sea level, the deep ocean below. A submarine leads to **The Logbook**, the blog itself. From orbit you can **zoom out** past live satellites, the planets and the Milky Way to the Big Bang, and the credits roll you back to the wall of work.
+The Illegal Archive is an interactive archive and blog, not a portfolio: a playground of AI films and images, real physics, live data APIs and an AI API. The home page is a wall of archive images drifting on black (in the style of the Apple TV photo screensaver), with one tile always in the middle: **the Iceberg**. That opens a cinematic, scrollable world built around an iceberg photograph: space at the top, the iceberg at sea level, the deep ocean below. A submarine leads to **The Logbook**, the blog itself. From orbit you can **zoom out** past live satellites, the planets and the Milky Way to the Big Bang, and the Big Bang rolls you back to the archive wall.
 
 - **Persona:** Dylan, AI content creator and creative technologist
-- **Audience:** classmates, teachers, and creative clients looking at my AI film, brand and campaign work
+- **Audience:** classmates, teachers and anyone curious about AI film and image experiments
 - **Visual direction:** playful and interactive on the outside (the world), calm and readable on the inside (the Logbook)
+
+> A snapshot of the earlier portfolio version is kept on the `portfolio-version` branch.
 
 ## Pages
 
 | URL | What it is |
 |---|---|
-| `/` | Home: an Apple TV-style wall of work; the fixed tile leads into the iceberg |
+| `/` | Home: an Apple TV-style archive wall; the fixed tile leads into the iceberg |
 | `/iceberg` | The world: space → sky → iceberg → ocean → seabed |
 | `/blog` | The Logbook: post list, posts, sign-in, writing, comments, search |
 | `/universe` | The zoom-out, from Earth to the Big Bang |
@@ -25,7 +27,7 @@ The home page is a wall of my work drifting on black (in the style of the Apple 
 | 2 | Interaction | Signed-in users write posts (`POST /api/posts`), optionally with a YouTube video, a project link, and a "feature in the iceberg" flag. **PD:** comments stored in PostgreSQL |
 | 3 | Layout and readability | Readable serif "paper" layout for posts, responsive from 320 px phones to desktop |
 | 4 | JavaScript feature | Search (debounced, server-side `ILIKE` on title and body) plus category filter chips |
-| 5 | External API | **Open-Meteo** weather for 5 cities, **USGS** earthquakes (seismograph), **CelesTrak** satellite orbits |
+| 5 | External API | **Open-Meteo** weather for 6 cities, **USGS** earthquakes (seismograph), **CelesTrak** satellite orbits |
 | 6 | Authentication | Username and password, bcrypt-hashed, sessions stored in Postgres, httpOnly cookie. Sign-in required to post |
 | 7 | AI API (PD) | **OpenRouter** writes an automatic summary of each new post, shown with the post. Can be regenerated |
 | 8 | SQL database (PD) | **PostgreSQL on Neon**: `posts`, `comments`, `users`, `session` tables |

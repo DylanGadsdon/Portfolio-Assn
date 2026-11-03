@@ -311,7 +311,7 @@ function showNewPost() {
       el('input', { name: 'link_url', type: 'url', placeholder: 'https://…' })),
     el('label', { class: 'check' },
       el('input', { name: 'featured', type: 'checkbox' }),
-      'Feature this in the iceberg (portfolio)'),
+      'Feature this in the archive'),
     errorBox,
     el('div', { class: 'row' }, submit, el('a', { class: 'btn ghost', href: '#/' }, 'Cancel')),
   );
