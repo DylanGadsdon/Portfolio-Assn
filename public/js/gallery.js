@@ -158,10 +158,10 @@ function build() {
   for (const layer of LAYERS) {
     for (let lane = 0; lane < layer.lanes; lane++) {
       let x = -Math.random() * 300;
-      while (x < W * 1.4) {
+      for (let n = 0; x < W * 1.4 && n < 60; n++) {
         const t = makeTile(layer, lane, x);
         tiles.push(t);
-        x += t.w + gapFor(layer);
+        x += Math.max(80, t.w + gapFor(layer));   // never 0, so this loop always ends
       }
     }
   }
