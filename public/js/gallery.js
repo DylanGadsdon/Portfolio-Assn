@@ -208,8 +208,13 @@ function frame(now) {
   const s = now / 1000;
   const hx = Math.sin(s / 9) * W * 0.12 + Math.sin(s / 4.3) * W * 0.02;
   const hy = Math.sin(s / 6.1) * H * 0.07 + Math.cos(s / 3.7) * H * 0.015;
-  const tilt = Math.sin(s / 5) * 2.2 + Math.sin(angle * Math.PI / 180) * 10;
-  hero.style.transform = `translate(calc(-50% + ${hx}px), calc(-50% + ${hy}px)) rotate(${tilt * 0.3}deg) rotateY(${tilt}deg)`;
+  const tilt = Math.sin(s / 5) * 2.2;
+  // During the spin the iceberg tile swings round with the rest of the library:
+  // the same pull-back and turn, using its own perspective (it sits outside the wall)
+  const swing = pull
+    ? ` perspective(1100px) translateZ(${-1500 * pull}px) rotateY(${angle}deg) rotateX(${6 * pull}deg)`
+    : '';
+  hero.style.transform = `translate(calc(-50% + ${hx * (1 - pull)}px), calc(-50% + ${hy * (1 - pull)}px))${swing} rotate(${tilt * 0.3}deg) rotateY(${tilt}deg)`;
 
   requestAnimationFrame(frame);
 }

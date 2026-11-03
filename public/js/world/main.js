@@ -98,5 +98,5 @@ updateGauge();
 
 spawnCreatures(photos);
 startLoop();
-startLiveData();
+startLiveData(photos);
 setupRaid();

@@ -68,9 +68,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 .credits dt { text-align: right; font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: #8a4a1e; align-self: center; }
 .credits dd { margin: 0; font-family: var(--font-head); font-size: 1.1rem; }
 .credits .fin { margin-top: 22vh; font-family: var(--font-head); font-size: 1.6rem; }
-#bigbang.rolling { place-items: start center; }
-#bigbang.rolling .roll { animation: credits var(--roll-time, 13s) linear forwards; }
-@keyframes credits { from { transform: translateY(30vh); } to { transform: translateY(calc(-100% + 30vh)); } }
+
+#bigbang.rolling .roll { animation: credits var(--roll-time, 5s) cubic-bezier(.55,0,.75,.4) forwards; }
+@keyframes credits { from { transform: translateY(0); } to { transform: translateY(-120vh); } }
 
 .restart {
   position: absolute; right: 20px; bottom: 20px;

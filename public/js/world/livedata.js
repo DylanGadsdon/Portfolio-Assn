@@ -171,12 +171,24 @@ function moonSVG(phaseDeg) {
   const limbSweep = waxing ? 1 : 0;
   const termSweep = gibbous ? limbSweep : 1 - limbSweep;
   const d = `M ${c} ${c - r} A ${r} ${r} 0 0 ${limbSweep} ${c} ${c + r} A ${rx} ${r} 0 0 ${termSweep} ${c} ${c - r} Z`;
+  if (moonPhoto) {
+    // A real Moon photo, with tonight's shadow laid over the unlit part.
+    // The shadow = the whole disc minus the lit shape ("evenodd" cuts it out).
+    const disc = `M ${c - r} ${c} A ${r} ${r} 0 1 0 ${c + r} ${c} A ${r} ${r} 0 1 0 ${c - r} ${c} Z`;
+    return `<svg viewBox="0 0 64 64">
+      <defs><clipPath id="moon-clip"><circle cx="${c}" cy="${c}" r="${r}"/></clipPath>
+      <filter id="moon-soft"><feGaussianBlur stdDeviation="0.8"/></filter></defs>
+      <image href="${moonPhoto}" x="${c - r}" y="${c - r}" width="${2 * r}" height="${2 * r}" clip-path="url(#moon-clip)" preserveAspectRatio="xMidYMid slice"/>
+      <path d="${disc} ${d}" fill="#02050a" fill-opacity=".9" fill-rule="evenodd" clip-path="url(#moon-clip)" filter="url(#moon-soft)"/>
+    </svg>`;
+  }
   return `<svg viewBox="0 0 64 64">
     <circle cx="${c}" cy="${c}" r="${r}" fill="#23262e"/>
     <path d="${d}" fill="#f1ecd8"/>
     <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="rgba(255,255,255,.25)"/>
   </svg>`;
 }
+let moonPhoto = null;   // set from Dylan's photos (moon.png) if there is one
 
 function updateMoon() {
   const A = window.Astronomy;
@@ -247,7 +259,8 @@ function startPopulation() {
 
 // ======================= Start =======================
 
-export function startLiveData() {
+export function startLiveData(photos = {}) {
+  moonPhoto = photos.moon || null;
   const balloons = buildBalloons();
   loadWeather(balloons);
   setInterval(() => loadWeather(balloons), 10 * 60 * 1000);   // every 10 minutes

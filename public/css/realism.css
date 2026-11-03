@@ -151,3 +151,6 @@ body { background: #000; font-family: var(--font-ui); }
   .zone-label { left: 12px; }
   #iceberg.photo #name { letter-spacing: .3em; padding-left: .3em; }
 }
+
+/* The Moon: bigger when it's a real photo */
+#moon-disc svg { width: 96px; height: 96px; filter: drop-shadow(0 0 24px rgba(220, 230, 255, .12)); }
