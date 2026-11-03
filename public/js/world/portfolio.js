@@ -1,13 +1,13 @@
-// public/js/world/portfolio.js — the best work, frozen into the iceberg.
+// public/js/world/portfolio.js — the work, shown as exhibits below the surface.
 //
 // Only posts marked "featured" appear here (GET /api/posts?featured=1).
 // Each one shows its YouTube thumbnail behind a layer of "ice"; clicking
 // plays the video in a full-screen player over the ocean.
 
-import { SEA, metresAt } from './stage.js';
+import { metresAt } from './stage.js';
 
-// Depths down the underwater part of the iceberg (vh from the iceberg's top)
-const SLOTS = [62, 125, 188, 250];
+// Depths in the world (vh from the top), down in the dark water
+const SLOTS = [290, 345, 400, 455];
 
 export async function placePortfolio() {
   const box = document.querySelector('#capsules');
@@ -23,13 +23,13 @@ export async function placePortfolio() {
 
   pieces.forEach((post, i) => {
     const y = SLOTS[i];
-    const depth = Math.round(-metresAt(SEA - 24 + y));
+    const depth = Math.round(-metresAt(y));
 
     const card = document.createElement('button');
     card.type = 'button';
     card.className = 'capsule';
     card.style.top = `calc(var(--vh) * ${y})`;
-    card.style.left = i % 2 ? '64%' : '38%';
+    card.style.left = i % 2 ? '66%' : '34%';
     card.setAttribute('aria-label', `${post.title}${post.youtube_id ? ': play video' : ''}`);
 
     if (post.youtube_id) {
@@ -42,10 +42,13 @@ export async function placePortfolio() {
       thumb.append(img);
       thumb.insertAdjacentHTML('beforeend', '<span class="play" aria-hidden="true">▶</span>');
       card.append(thumb);
+    } else {
+      // No video yet: an empty dark frame waiting for the film
+      card.insertAdjacentHTML('beforeend', '<span class="thumb empty" aria-hidden="true"><span class="play">▶</span></span>');
     }
     const label = document.createElement('span');
     label.className = 'label';
-    label.textContent = `${post.category} · frozen at ${depth.toLocaleString('en-GB')} m`;
+    label.textContent = `${post.category} · ${depth.toLocaleString('en-GB')} m`;
     const title = document.createElement('strong');
     title.textContent = post.title;
     card.append(label, title);

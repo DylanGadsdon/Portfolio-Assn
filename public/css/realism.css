@@ -154,3 +154,41 @@ body { background: #000; font-family: var(--font-ui); }
 
 /* The Moon: bigger when it's a real photo */
 #moon-disc svg { width: 96px; height: 96px; filter: drop-shadow(0 0 24px rgba(220, 230, 255, .12)); }
+
+/* ---------- The work, below the surface ---------- */
+#capsules { position: absolute; left: 0; right: 0; top: 0; height: 0; z-index: 4; }
+.capsule {
+  width: clamp(240px, 26vw, 400px);
+  padding: 10px 10px 16px; border-radius: 4px;
+  background: rgba(232, 244, 255, .03); border: 1px solid var(--line);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .6); backdrop-filter: none;
+  color: var(--ink); font-family: var(--font-ui);
+  transform: translate(-50%, -50%);
+}
+.capsule:nth-child(even) { transform: translate(-50%, -50%); }
+.capsule:hover, .capsule:focus-visible { transform: translate(-50%, -50%) scale(1.03); box-shadow: 0 0 0 1px rgba(232,244,255,.4), 0 30px 80px rgba(0,0,0,.6); }
+.capsule .thumb.empty { display: block; aspect-ratio: 16 / 9; border-radius: 2px; background: radial-gradient(ellipse at 50% 40%, #0d2234, #02070d 75%); }
+.capsule img { filter: saturate(.8) brightness(.85); }
+.capsule .play { background: rgba(0, 8, 16, .6); border-color: rgba(232, 244, 255, .5); }
+.capsule .label { font-family: 'IBM Plex Mono', monospace; color: var(--ink-soft); margin-top: 12px; display: block; }
+.capsule strong { font-family: var(--font-ui); font-weight: 300; font-size: 1.25rem; }
+.player { border-color: var(--line); }
+
+/* ---------- Torch: the deep is pitch black except where you point ---------- */
+#dark {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; pointer-events: none;
+  top: calc(var(--vh) * var(--sea) + var(--band-h) * (1 - var(--waterline)) + var(--vh) * 30);
+  background: linear-gradient(transparent 0, rgba(0, 2, 6, .97) calc(var(--vh) * 26));
+  --mx: 50%; --my: -999px;
+  -webkit-mask-image: radial-gradient(circle 230px at var(--mx) var(--my), transparent 0, transparent 35%, #000 100%);
+  mask-image: radial-gradient(circle 230px at var(--mx) var(--my), transparent 0, transparent 35%, #000 100%);
+}
+#beam {
+  position: absolute; left: -260px; top: -260px; width: 520px; height: 520px; z-index: 7;
+  pointer-events: none; border-radius: 50%; opacity: 0; mix-blend-mode: screen;
+  background: radial-gradient(circle, rgba(170, 215, 255, .10), rgba(170, 215, 255, .03) 45%, transparent 70%);
+}
+#ripples { position: absolute; z-index: 3; pointer-events: none; }
+/* Text and instruments stay readable above the dark */
+#seabed { z-index: 7; }
+.zone-label { z-index: 7; }
