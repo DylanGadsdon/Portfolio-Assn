@@ -201,3 +201,52 @@ body { background: #000; font-family: var(--font-ui); }
 }
 .exhibit-sound:hover { background: rgba(255,255,255,.15); }
 #capsules { z-index: 9; }
+
+/* ---------- The mothership: a perfect black sphere (original design) ---------- */
+#warship { width: clamp(200px, 24vw, 380px) !important; z-index: 1 !important; }
+.orb { position: relative; width: 100%; aspect-ratio: 1; border-radius: 50%; }
+.orb-body {
+  position: absolute; inset: 0; border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255,226,190,.28), transparent 32%),          /* sun catching the top-left */
+    repeating-linear-gradient(0deg, transparent 0 13px, rgba(255,255,255,.035) 13px 14px), /* faint panel lines */
+    repeating-linear-gradient(90deg, transparent 0 21px, rgba(255,255,255,.025) 21px 22px),
+    radial-gradient(circle at 38% 36%, #24262b 0%, #0e0f12 45%, #030405 72%, #000 100%);
+  box-shadow: inset -30px -24px 60px rgba(0,0,0,.9), inset 6px 6px 18px rgba(255,214,170,.12), 0 0 80px rgba(0,0,0,.8);
+}
+.orb-body::after {                       /* round shading so the panel lines curve with the sphere */
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle at 36% 34%, transparent 40%, rgba(0,0,0,.75) 78%);
+}
+.orb-ring {                              /* a thin seam of light around the equator */
+  position: absolute; left: 0; right: 0; top: 50%; height: 14%; transform: translateY(-50%);
+  border-radius: 50%; border-bottom: 1.5px solid rgba(255,190,120,.55); border-top: 1px solid rgba(255,190,120,.08);
+  filter: drop-shadow(0 0 4px rgba(255,170,90,.7));
+}
+.orb-port {                              /* the weapon: glows hotter as it charges */
+  position: absolute; left: 80%; top: 54%; width: 9%; aspect-ratio: 1; transform: translate(-50%, -50%);
+  border-radius: 50%; background: radial-gradient(#fff 0 18%, #ffb36b 40%, rgba(255,90,30,.6) 62%, transparent 72%);
+  opacity: .25; transition: none;
+}
+.orb.charging .orb-port { animation: charge 2.4s ease-in forwards; }
+@keyframes charge { 0% { opacity: .25; transform: translate(-50%,-50%) scale(1); } 100% { opacity: 1; transform: translate(-50%,-50%) scale(2.6); filter: drop-shadow(0 0 18px #ffb36b); } }
+
+.deathbeam {
+  height: 5px; transform-origin: 0 50%; border-radius: 5px;
+  background: linear-gradient(90deg, #fff, #ffe0b8 30%, #ff9a4d);
+  box-shadow: 0 0 10px #ffb36b, 0 0 30px rgba(255,140,60,.8);
+  animation: deathbeam 1.4s ease-out forwards;
+}
+@keyframes deathbeam { 0% { clip-path: inset(0 100% 0 0); } 20% { clip-path: inset(0 0 0 0); } 85% { opacity: 1; } 100% { opacity: 0; clip-path: inset(0 0 0 0); } }
+.shard {
+  width: var(--s, 6px); height: calc(var(--s, 6px) * .5); background: linear-gradient(90deg, #d8d2c8, #6b665e);
+  box-shadow: 0 0 6px rgba(255,180,110,.8);
+  animation: shard 2.6s cubic-bezier(.1,.6,.3,1) forwards;
+}
+@keyframes shard { to { transform: translate(var(--dx), var(--dy)) rotate(var(--r)); opacity: 0; } }
+.blast {
+  width: 20px; height: 20px; border-radius: 50%; transform: translate(-50%, -50%);
+  background: radial-gradient(#fff 0 20%, #ffd9a8 35%, #ff8a3d 55%, rgba(255,80,20,.3) 70%, transparent 72%);
+  animation: blast 1.6s ease-out forwards;
+}
+@keyframes blast { 0% { transform: translate(-50%,-50%) scale(.2); opacity: 1; } 60% { opacity: .9; } 100% { transform: translate(-50%,-50%) scale(14); opacity: 0; } }

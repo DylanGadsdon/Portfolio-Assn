@@ -1,133 +1,105 @@
-// public/js/world/raid.js — the cycle up in space:
-//   click the space station → an alien warship attacks → the station falls
-//   back into the iceberg → it's rebuilt and the cycle can start again.
-//   (It also happens by itself if the station has been on screen for a while.)
+// public/js/world/raid.js — something happening far away, in the background:
+//   a perfect black sphere drifts in, charges one weapon, and destroys the
+//   space station with a single beam. Then it leaves, and the station is
+//   quietly rebuilt so it can happen again.
+//   (Click the station to start it, or wait: it happens by itself.)
 //
 // Each step is an animation that returns a promise (anim.finished), so the
 // whole story reads top-to-bottom with `await`, one step after another.
 
-import { SEA, px, size, wait, rand, fx, splash, toast, worldRect, reducedMotion } from './stage.js';
-import { scatter } from './creatures.js';
+import { px, size, wait, rand, fx, worldRect, reducedMotion } from './stage.js';
 
-const iceberg = document.querySelector('#iceberg');
 const station = document.querySelector('#station');
-const warship = document.querySelector('#warship');
+const ship = document.querySelector('#warship');
 let running = false;
 
 export function setupRaid() {
-  placeStation();
-  addEventListener('resize', placeStation);
+  // The mothership is built from HTML and CSS: a sphere, a ring of light and a weapon port
+  ship.innerHTML = '<div class="orb"><div class="orb-body"></div><div class="orb-ring"></div><div class="orb-port"></div></div>';
+
+  place();
+  addEventListener('resize', place);
   station.style.cursor = 'pointer';
-  station.title = 'Click the station';
+  station.title = 'Space station';
   station.addEventListener('click', start);
 
-  // If the station has been on screen for 25 s with nothing happening,
-  // the fleet arrives anyway.
+  // If the station has been on screen for 20 s with nothing happening, it happens anyway
   let visibleSince = null;
   new IntersectionObserver(([entry]) => {
     visibleSince = entry.isIntersecting ? Date.now() : null;
   }, { threshold: 0.6 }).observe(station);
   setInterval(() => {
-    if (!running && visibleSince && Date.now() - visibleSince > 25000) {
+    if (!running && visibleSince && Date.now() - visibleSince > 20000) {
       start().finally(() => { visibleSince = Date.now(); });
     }
   }, 2000);
 }
 
+function place() {
+  // Station off to the right, the sphere further back on the left: both small, both far away
+  station.style.left = `${size.width * 0.66}px`;
+  station.style.top = `${px(30)}px`;
+  ship.style.left = `${size.width * 0.3}px`;
+  ship.style.top = `${px(8)}px`;
+}
+
 async function start() {
   if (running) return;
   running = true;
-  try { await raidAndCrash(); } finally { running = false; }
+  try { await destroyStation(); } finally { running = false; }
 }
 
-function placeStation() {
-  // off to the right and small: something happening in the background
-  station.style.left = `${size.width * 0.68}px`;
-  station.style.top = `${px(30)}px`;
-}
+async function destroyStation() {
+  const orb = ship.querySelector('.orb');
 
-// Keep an element in the middle of the screen while it moves (a "camera")
-function follow(el, until) {
-  if (reducedMotion) return;
-  let done = false;
-  until.then(() => { done = true; }, () => { done = true; });
-  (function step() {
-    if (done) return;
-    const r = el.getBoundingClientRect();
-    const target = window.scrollY + r.top + r.height / 2 - window.innerHeight / 2;
-    window.scrollTo(0, window.scrollY + (target - window.scrollY) * 0.14);
-    requestAnimationFrame(step);
-  })();
-}
-
-async function raidAndCrash() {
-  const s = worldRect(station);
-
-  // 3. The warship arrives from the top right
-  toast('⚠ Unidentified fleet approaching', 3000);
-  Object.assign(warship.style, { left: `${size.width * 0.04}px`, top: `${Math.max(0, s.y - px(30))}px` });
-  const arrive = warship.animate(
-    [{ transform: `translate(${size.width}px, -${px(20)}px) scale(.6)`, opacity: 0 },
+  // 1. The sphere drifts in from the dark, slowly
+  const arrive = ship.animate(
+    [{ transform: 'translate(-30vw, -6vh) scale(.7)', opacity: 0 },
      { transform: 'translate(0, 0) scale(1)', opacity: 1 }],
-    { duration: reducedMotion ? 10 : 2600, easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'forwards' });
-  follow(warship, arrive.finished);
+    { duration: reducedMotion ? 10 : 5000, easing: 'cubic-bezier(.2,.6,.2,1)', fill: 'forwards' });
   await arrive.finished;
-  await wait(500);
+  await wait(600);
 
-  // 4. Three volleys of beams from the warship's guns to the station
-  const w = worldRect(warship);
-  const guns = [[0.06, 0.5], [0.29, 0.26], [0.29, 0.74]];
-  for (let volley = 0; volley < 3; volley++) {
-    for (const [gx, gy] of guns) {
-      const x1 = w.x + w.w * gx, y1 = w.y + w.h * gy;
-      const x2 = s.x + rand(0.3, 0.7) * s.w, y2 = s.y + rand(0.3, 0.7) * s.h;
-      const beam = fx('beamline', x1, y1, { life: 500 });
-      beam.style.width = `${Math.hypot(x2 - x1, y2 - y1)}px`;
-      beam.style.transform = `rotate(${Math.atan2(y2 - y1, x2 - x1)}rad)`;
-      setTimeout(() => fx('boom', x2, y2, { life: 800 }), 120);
-    }
-    station.animate([{ filter: 'none' }, { filter: 'brightness(2.5) sepia(1) hue-rotate(-30deg)' }, { filter: 'none' }], { duration: 400 });
-    await wait(650);
+  // 2. It charges the weapon
+  orb.classList.add('charging');
+  await wait(2400);
+
+  // 3. One beam, from the weapon port to the middle of the station
+  const port = worldRect(ship.querySelector('.orb-port'));
+  const s = worldRect(station);
+  const x1 = port.cx, y1 = port.cy, x2 = s.cx, y2 = s.cy;
+  const beam = fx('deathbeam', x1, y1, { life: 1400 });
+  beam.style.width = `${Math.hypot(x2 - x1, y2 - y1)}px`;
+  beam.style.transform = `rotate(${Math.atan2(y2 - y1, x2 - x1)}rad)`;
+  await wait(350);
+
+  // 4. The station is gone: a blast, a shower of pieces, then nothing
+  fx('blast', x2, y2, { life: 1600 });
+  setTimeout(() => fx('blast', x2 + rand(-30, 30), y2 + rand(-15, 15), { life: 1600 }), 180);
+  for (let i = 0; i < 26; i++) {
+    const angle = rand(0, Math.PI * 2), dist = rand(60, 260);
+    fx('shard', x2 + rand(-s.w / 3, s.w / 3), y2 + rand(-s.h / 4, s.h / 4), {
+      life: 2600,
+      vars: { '--dx': `${Math.cos(angle) * dist}px`, '--dy': `${Math.sin(angle) * dist}px`,
+              '--r': `${rand(-540, 540)}deg`, '--s': `${rand(3, 9)}px` },
+    });
   }
-  fx('boom', s.cx, s.cy, { life: 800 });
-  toast('Station hit! It’s going down…');
+  station.animate([{ opacity: 1, filter: 'brightness(3)' }, { opacity: 0, filter: 'brightness(1)' }],
+    { duration: 500, fill: 'forwards' });
+  orb.classList.remove('charging');
+  await wait(1800);
 
-  // 5. The station falls, tumbling, into the tip of the iceberg
-  const tip = worldRect(document.querySelector('#name'));
-  const dx = tip.cx - s.cx, dy = tip.y - s.cy;
-  const fall = station.animate(
-    [{ transform: 'translate(0,0) rotate(0) scale(1)' },
-     { transform: `translate(${dx * 0.4}px, ${dy * 0.35}px) rotate(70deg) scale(.85)`, offset: 0.4 },
-     { transform: `translate(${dx}px, ${dy}px) rotate(200deg) scale(.55)` }],
-    { duration: reducedMotion ? 10 : 4200, easing: 'cubic-bezier(.5,0,1,1)', fill: 'forwards' });
-  const smoke = setInterval(() => {
-    const p = worldRect(station);
-    fx('boom', p.cx + rand(-20, 20), p.cy, { life: 800 });
-  }, 180);
-  warship.animate([{ transform: 'none', opacity: 1 }, { transform: `translate(${size.width}px, -${px(40)}px) scale(.5)`, opacity: 0 }],
-    { duration: 4000, delay: 800, easing: 'ease-in', fill: 'forwards' });
-  follow(station, fall.finished);
-  await fall.finished;
-  clearInterval(smoke);
+  // 5. The sphere leaves the way it came
+  const leave = ship.animate(
+    [{ transform: 'translate(0, 0) scale(1)', opacity: 1 },
+     { transform: 'translate(-30vw, -8vh) scale(.6)', opacity: 0 }],
+    { duration: reducedMotion ? 10 : 4500, easing: 'ease-in', fill: 'forwards' });
+  await leave.finished;
+  arrive.cancel();
+  leave.cancel();
+  await wait(5000);
 
-  // 6. Impact
-  document.body.append(Object.assign(document.createElement('div'), { className: 'flash' }));
-  setTimeout(() => document.querySelector('.flash')?.remove(), 1300);
-  iceberg.classList.remove('rising', 'shake');
-  void iceberg.offsetWidth;            // restart the CSS animation
-  iceberg.classList.add('shake');
-  splash(tip.cx, px(SEA), 30);
-  scatter();
-  station.style.opacity = '0';
-  toast('…and right back where it started.', 3000);
-  await wait(3000);
-
-  // 7. Rebuild: the cycle can start again
-  fall.cancel();
+  // 6. The station is rebuilt, quietly
   station.getAnimations().forEach((a) => a.cancel());
-  warship.getAnimations().forEach((a) => a.cancel());
-  warship.style.opacity = '';
-  station.style.opacity = '';
-  station.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], { duration: 1500 });
-  toast('Station rebuilt. Click it to go again.', 3200);
+  station.animate([{ opacity: 0 }, { opacity: 0.8 }], { duration: 2500 });
 }
