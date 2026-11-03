@@ -129,7 +129,7 @@ body { background: #000; font-family: var(--font-ui); }
 
 #moon-panel { background: none; border: 0; backdrop-filter: none; }
 #leave-orbit { font-family: 'IBM Plex Mono', monospace; font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; border-color: var(--line); background: none; }
-#station { opacity: .55; width: clamp(120px, 14vw, 200px) !important; filter: blur(.4px); }   /* far away, in the background */
+#station { opacity: .8; width: clamp(180px, 20vw, 300px) !important; }   /* far away, in the background */
 #station .art:not(.photo) { filter: grayscale(.85) brightness(1.1); }
 
 /* ---------- HUD ---------- */

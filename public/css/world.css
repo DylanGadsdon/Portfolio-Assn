@@ -434,4 +434,4 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--sonar); outline
 #iceberg.photo #name { color: #fff; mix-blend-mode: normal; text-shadow: 0 4px 30px rgba(0,0,0,.45); }
 .art.photo { display: block; width: 100%; height: auto; pointer-events: none; }
 .creature .art.photo { filter: drop-shadow(0 10px 18px rgba(0,0,0,.35)); }
-#station .art.photo, #warship .art.photo { filter: drop-shadow(0 0 20px rgba(0,0,0,.6)); }
+#warship .art.photo { filter: drop-shadow(0 0 20px rgba(0,0,0,.6)); }
