@@ -12,6 +12,7 @@ import { pool } from './db.js';
 import postsRouter from './routes/posts.js';
 import authRouter from './routes/auth.js';
 import satellitesRouter from './routes/satellites.js';
+import galleryRouter from './routes/gallery.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,6 +59,7 @@ app.use('/vendor/world-atlas', express.static(path.join(modules, 'world-atlas'))
 
 // Pages
 app.get('/blog', (req, res) => res.sendFile(path.join(publicDir, 'blog.html')));
+app.get('/iceberg', (req, res) => res.sendFile(path.join(publicDir, 'iceberg.html')));
 app.get('/universe', (req, res) => res.sendFile(path.join(publicDir, 'universe.html')));
 
 // 6. API routes. Every data request starts with /api/
@@ -67,6 +69,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRouter);
 app.use('/api/posts', postsRouter);
 app.use('/api/satellites', satellitesRouter);
+app.use('/api/gallery', galleryRouter);
 
 // 7. If anything above throws an error, end up here instead of crashing
 app.use((err, req, res, next) => {
