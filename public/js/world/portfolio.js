@@ -1,94 +1,55 @@
-// public/js/world/portfolio.js — the work, shown as exhibits below the surface.
+// public/js/world/portfolio.js — the EXIT/ archive, shown below the surface.
 //
-// Only posts marked "featured" appear here (GET /api/posts?featured=1).
-// Each one shows its YouTube thumbnail behind a layer of "ice"; clicking
-// plays the video in a full-screen player over the ocean.
-
-import { metresAt } from './stage.js';
+// Each piece fills the whole screen, like walking up close to a wall in a
+// gallery. Scroll down to move from one piece to the next. Videos play on
+// their own (muted) while they're on screen and pause when they leave.
 
 // Depths in the world (vh from the top), down in the dark water
-const SLOTS = [290, 345, 400, 455];
+const PIECES = [
+  { y: 270, src: '/media/archive/intrusive-thoughts.mp4', title: 'Intrusive Thoughts', kind: 'Art installation · 001' },
+  { y: 385, src: '/media/archive/cats-and-gats.mp4', title: 'Cats & Gats', kind: 'Concept film · 002' },
+];
 
-export async function placePortfolio() {
+export function placePortfolio() {
   const box = document.querySelector('#capsules');
-  let pieces = [];
-  try {
-    const res = await fetch('/api/posts?featured=1');
-    if (!res.ok) throw new Error(res.status);
-    pieces = (await res.json()).slice(0, SLOTS.length);
-  } catch (err) {
-    console.warn('Could not load the portfolio', err);
-    return;
-  }
 
-  pieces.forEach((post, i) => {
-    const y = SLOTS[i];
-    const depth = Math.round(-metresAt(y));
-
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = 'capsule';
-    card.style.top = `calc(var(--vh) * ${y})`;
-    card.style.left = i % 2 ? '66%' : '34%';
-    card.setAttribute('aria-label', `${post.title}${post.youtube_id ? ': play video' : ''}`);
-
-    if (post.youtube_id) {
-      const thumb = document.createElement('span');
-      thumb.className = 'thumb';
-      const img = document.createElement('img');
-      img.src = `https://i.ytimg.com/vi/${post.youtube_id}/hqdefault.jpg`;
-      img.alt = '';
-      img.loading = 'lazy';
-      thumb.append(img);
-      thumb.insertAdjacentHTML('beforeend', '<span class="play" aria-hidden="true">▶</span>');
-      card.append(thumb);
-    } else {
-      // No video yet: an empty dark frame waiting for the film
-      card.insertAdjacentHTML('beforeend', '<span class="thumb empty" aria-hidden="true"><span class="play">▶</span></span>');
+  const watcher = new IntersectionObserver((entries) => {
+    for (const { target, isIntersecting } of entries) {
+      const video = target.querySelector('video');
+      if (isIntersecting) video.play().catch(() => {});
+      else video.pause();
     }
-    const label = document.createElement('span');
-    label.className = 'label';
-    label.textContent = `${post.category} · ${depth.toLocaleString('en-GB')} m`;
+  }, { threshold: 0.4 });
+
+  for (const piece of PIECES) {
+    const section = document.createElement('section');
+    section.className = 'exhibit';
+    section.style.top = `calc(var(--vh) * ${piece.y})`;
+    section.setAttribute('aria-label', piece.title);
+
+    const video = document.createElement('video');
+    Object.assign(video, { src: piece.src, muted: true, loop: true, playsInline: true, preload: 'metadata' });
+
+    const caption = document.createElement('div');
+    caption.className = 'exhibit-caption';
+    const kind = document.createElement('span');
+    kind.className = 'exhibit-kind';
+    kind.textContent = piece.kind;
     const title = document.createElement('strong');
-    title.textContent = post.title;
-    card.append(label, title);
+    title.textContent = piece.title;
+    caption.append(kind, title);
 
-    card.addEventListener('click', () => {
-      if (post.youtube_id) openPlayer(post);
-      else window.location.href = `/blog#/post/${post.id}`;
+    const sound = document.createElement('button');
+    sound.type = 'button';
+    sound.className = 'exhibit-sound';
+    sound.textContent = 'Sound off';
+    sound.addEventListener('click', () => {
+      video.muted = !video.muted;
+      sound.textContent = video.muted ? 'Sound off' : 'Sound on';
     });
-    box.append(card);
-  });
-}
 
-// ---------- Full-screen video player ----------
-// A <dialog> gives us a proper pop-up for free: it traps keyboard focus
-// and closes with the Esc key.
-function openPlayer(post) {
-  const dialog = document.createElement('dialog');
-  dialog.className = 'player';
-  dialog.setAttribute('aria-label', post.title);
-  dialog.innerHTML = `
-    <div class="player-frame">
-      <iframe allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
-    </div>
-    <div class="player-bar">
-      <strong></strong>
-      <a class="player-log" href="/blog#/post/${post.id}">Read the log →</a>
-      <button type="button" class="player-close" aria-label="Close video">✕</button>
-    </div>`;
-  dialog.querySelector('iframe').src =
-    `https://www.youtube-nocookie.com/embed/${post.youtube_id}?autoplay=1&rel=0&modestbranding=1`;
-  dialog.querySelector('iframe').title = `Video: ${post.title}`;
-  dialog.querySelector('strong').textContent = post.title;
-
-  const close = () => dialog.close();
-  dialog.querySelector('.player-close').addEventListener('click', close);
-  // Clicking the dark area outside the video also closes it
-  dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); });
-  // Removing the dialog removes the iframe, which stops the video
-  dialog.addEventListener('close', () => dialog.remove());
-
-  document.body.append(dialog);
-  dialog.showModal();
+    section.append(video, caption, sound);
+    box.append(section);
+    watcher.observe(section);
+  }
 }

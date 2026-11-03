@@ -180,3 +180,24 @@ body { background: #000; font-family: var(--font-ui); }
 /* Text and instruments stay readable above the dark */
 #seabed { z-index: 7; }
 .zone-label { z-index: 7; }
+
+/* ---------- EXIT/ archive: full-screen pieces below the surface ---------- */
+.exhibit {
+  position: absolute; left: 0; width: 100%; height: calc(var(--vh) * 100);
+  background: #000; overflow: hidden;
+  box-shadow: 0 0 120px 60px rgba(0, 4, 10, .9);
+}
+.exhibit video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.exhibit-caption {
+  position: absolute; left: clamp(16px, 4vw, 56px); bottom: clamp(20px, 6vh, 64px);
+  display: flex; flex-direction: column; gap: 8px; color: #f2f6f8; text-shadow: 0 2px 20px rgba(0,0,0,.7);
+}
+.exhibit-kind { font-family: 'IBM Plex Mono', monospace; font-size: .72rem; letter-spacing: .3em; text-transform: uppercase; color: rgba(232,244,255,.75); }
+.exhibit-caption strong { font-family: var(--font-ui, sans-serif); font-weight: 300; font-size: clamp(2rem, 6vw, 5rem); line-height: 1; letter-spacing: .02em; }
+.exhibit-sound {
+  position: absolute; right: clamp(16px, 4vw, 56px); bottom: clamp(20px, 6vh, 64px);
+  font: inherit; font-family: 'IBM Plex Mono', monospace; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase;
+  color: #f2f6f8; background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.35); border-radius: 999px; padding: 8px 14px; cursor: pointer;
+}
+.exhibit-sound:hover { background: rgba(255,255,255,.15); }
+#capsules { z-index: 9; }
