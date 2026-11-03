@@ -194,6 +194,27 @@ function bigBangColour(t) {
   return 'rgba(255,252,245,1)';
 }
 
+// ---------- Credits ----------
+// The Big Bang text holds for 5 seconds, then it all rolls up like the end of
+// a film, and the gallery fades in from white.
+let creditsTimer = null, creditsEnd = null;
+function startCredits() {
+  if (creditsTimer || bang.classList.contains('rolling')) return;
+  creditsTimer = setTimeout(() => {
+    bang.classList.add('rolling');
+    const roll = bang.querySelector('.roll');
+    roll.addEventListener('animationend', () => {
+      creditsEnd = setTimeout(() => { location.href = '/?from=bigbang'; }, 600);
+    }, { once: true });
+  }, 5000);
+}
+function cancelCredits() {
+  // Zooming back in before the roll starts calls it off
+  if (bang.classList.contains('rolling')) return;
+  clearTimeout(creditsTimer);
+  creditsTimer = null;
+}
+
 // ---------- Resize ----------
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
@@ -289,6 +310,7 @@ function frame(nowMs) {
   const t = smooth(BIG_BANG[0], BIG_BANG[1], z);
   bang.style.background = bigBangColour(t);
   bang.classList.toggle('done', t > 0.97);
+  if (t > 0.97) startCredits(); else cancelCredits();
 
   updateReadout();
   requestAnimationFrame(frame);

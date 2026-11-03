@@ -50,16 +50,34 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 #sim-clock { font-variant-numeric: tabular-nums; }
 
 #bigbang {
-  position: fixed; inset: 0; display: grid; place-items: center; padding: 24px;
+  position: fixed; inset: 0; overflow: hidden;
+  display: grid; place-items: center; padding: 24px;
   background: transparent; pointer-events: none; text-align: center;
 }
-#bigbang > div { max-width: 560px; opacity: 0; transition: opacity .6s; color: #2a0d00; }
+#bigbang .roll { max-width: 600px; opacity: 0; transition: opacity .6s; color: #2a0d00; }
 #bigbang.done { pointer-events: auto; }
-#bigbang.done > div { opacity: 1; }
+#bigbang.done .roll { opacity: 1; }
 #bigbang h1 { font-family: var(--font-head); font-weight: 900; font-size: clamp(2.6rem, 9vw, 5.5rem); margin: 6px 0 14px; letter-spacing: -.01em; }
 #bigbang .label { color: #7a2e00; }
 #bigbang p { line-height: 1.6; }
-.restart { display: inline-block; margin-top: 18px; color: #2a0d00; border-color: #2a0d00; background: rgba(255,255,255,.4); }
+
+/* Credits: hidden below the text, then everything scrolls up like the end of a film */
+.credits { margin-top: 70vh; }
+.credits h2 { font-family: var(--font-head); font-weight: 600; font-size: clamp(1.6rem, 5vw, 2.6rem); margin: 6px 0 40px; }
+.credits dl { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; margin: 0; text-align: left; }
+.credits dt { text-align: right; font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: #8a4a1e; align-self: center; }
+.credits dd { margin: 0; font-family: var(--font-head); font-size: 1.1rem; }
+.credits .fin { margin-top: 30vh; font-family: var(--font-head); font-size: 1.6rem; }
+#bigbang.rolling { place-items: start center; }
+#bigbang.rolling .roll { animation: credits var(--roll-time, 26s) linear forwards; }
+@keyframes credits { from { transform: translateY(30vh); } to { transform: translateY(calc(-100% + 30vh)); } }
+
+.restart {
+  position: absolute; right: 20px; bottom: 20px;
+  color: #2a0d00; border-color: #2a0d00; background: rgba(255,255,255,.4);
+  opacity: 0; transition: opacity .6s; pointer-events: none;
+}
+#bigbang.done .restart { opacity: 1; pointer-events: auto; }
 
 @media (max-width: 640px) {
   #power { font-size: 1.4rem; }

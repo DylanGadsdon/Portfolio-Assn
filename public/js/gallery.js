@@ -54,6 +54,11 @@ async function loadItems() {
       type: 'placeholder', archive, title, hue: (i * 47) % 360, ratio: SHAPES[i % SHAPES.length],
     }));
   }
+  // Shuffle so the same series isn't always side by side
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
   shown = items;
 }
 
@@ -107,15 +112,12 @@ function sizeTile(t, item) {
     t.el.style.height = `${t.h}px`;
   };
   if (item.ratio) return apply(item.ratio);
-  apply(item.type === 'youtube' ? 16 / 9 : 4 / 3);
-  const media = t.button.querySelector('img, video');
-  if (!media || item.type === 'youtube') return;
-  const done = () => {
-    const ratio = (media.naturalWidth || media.videoWidth) / (media.naturalHeight || media.videoHeight);
-    if (ratio) apply(ratio);
-  };
-  media.addEventListener(media.tagName === 'IMG' ? 'load' : 'loadedmetadata', done, { once: true });
+  if (item.type === 'youtube') return apply(16 / 9);
+  // Photos get a random frame shape (the picture is cropped to fill it, like
+  // background-size: cover). Mixed shapes are what make the wall feel alive.
+  apply(CROPS[Math.floor(Math.random() * CROPS.length)]);
 }
+const CROPS = [16 / 9, 16 / 9, 3 / 2, 4 / 3, 1, 4 / 5, 2 / 3];
 
 function makeTile(layer, lane, x) {
   const el = document.createElement('div');
