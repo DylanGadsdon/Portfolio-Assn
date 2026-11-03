@@ -18,6 +18,7 @@ const CITIES = [
   { name: 'Bangkok',     lat: 13.76, lon: 100.50,  colour: '#06d6a0', x: 86, y: 92 },
   { name: 'Los Angeles', lat: 34.05, lon: -118.24, colour: '#f78c6b', x: 86, y: 103 },
   { name: 'Kyoto',       lat: 35.01, lon: 135.77,  colour: '#c77dff', x: 3,  y: 114 },
+  { name: 'Stockholm',   lat: 59.33, lon: 18.07,   colour: '#7dc8ff', x: 86, y: 114 },
 ];
 
 // WMO weather codes → words + symbol

@@ -6,7 +6,7 @@ import { spawnCreatures, startLoop } from './creatures.js';
 import { startLiveData } from './livedata.js';
 import { setupRaid } from './raid.js';
 import { placePortfolio } from './portfolio.js';
-import { setupTorch, setupRipples } from './effects.js';
+import { setupRipples } from './effects.js';
 
 measure();
 
@@ -103,5 +103,4 @@ startLoop();
 startLiveData(photos);
 setupRaid();
 placePortfolio();
-setupTorch();
 setupRipples();

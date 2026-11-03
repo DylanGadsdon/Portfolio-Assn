@@ -41,8 +41,9 @@ async function start() {
 }
 
 function placeStation() {
-  station.style.left = `${size.width * 0.5 - station.offsetWidth / 2}px`;
-  station.style.top = `${px(40)}px`;
+  // off to the right and small: something happening in the background
+  station.style.left = `${size.width * 0.68}px`;
+  station.style.top = `${px(30)}px`;
 }
 
 // Keep an element in the middle of the screen while it moves (a "camera")

@@ -129,7 +129,7 @@ body { background: #000; font-family: var(--font-ui); }
 
 #moon-panel { background: none; border: 0; backdrop-filter: none; }
 #leave-orbit { font-family: 'IBM Plex Mono', monospace; font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; border-color: var(--line); background: none; }
-#station { opacity: .9; }
+#station { opacity: .55; width: clamp(120px, 14vw, 200px) !important; filter: blur(.4px); }   /* far away, in the background */
 #station .art:not(.photo) { filter: grayscale(.85) brightness(1.1); }
 
 /* ---------- HUD ---------- */
@@ -153,7 +153,8 @@ body { background: #000; font-family: var(--font-ui); }
 }
 
 /* The Moon: bigger when it's a real photo */
-#moon-disc svg { width: 96px; height: 96px; filter: drop-shadow(0 0 24px rgba(220, 230, 255, .12)); }
+#moon-panel { opacity: .8; transform: scale(.85); transform-origin: left top; }
+#moon-disc svg { width: 72px; height: 72px; filter: drop-shadow(0 0 24px rgba(220, 230, 255, .12)); }
 
 /* ---------- The work, below the surface ---------- */
 #capsules { position: absolute; left: 0; right: 0; top: 0; height: 0; z-index: 4; }
@@ -174,20 +175,7 @@ body { background: #000; font-family: var(--font-ui); }
 .capsule strong { font-family: var(--font-ui); font-weight: 300; font-size: 1.25rem; }
 .player { border-color: var(--line); }
 
-/* ---------- Torch: the deep is pitch black except where you point ---------- */
-#dark {
-  position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; pointer-events: none;
-  top: calc(var(--vh) * var(--sea) + var(--band-h) * (1 - var(--waterline)) + var(--vh) * 30);
-  background: linear-gradient(transparent 0, rgba(0, 2, 6, .97) calc(var(--vh) * 26));
-  --mx: 50%; --my: -999px;
-  -webkit-mask-image: radial-gradient(circle 230px at var(--mx) var(--my), transparent 0, transparent 35%, #000 100%);
-  mask-image: radial-gradient(circle 230px at var(--mx) var(--my), transparent 0, transparent 35%, #000 100%);
-}
-#beam {
-  position: absolute; left: -260px; top: -260px; width: 520px; height: 520px; z-index: 7;
-  pointer-events: none; border-radius: 50%; opacity: 0; mix-blend-mode: screen;
-  background: radial-gradient(circle, rgba(170, 215, 255, .10), rgba(170, 215, 255, .03) 45%, transparent 70%);
-}
+/* The deep simply gets darker the further down you go */
 #ripples { position: absolute; z-index: 3; pointer-events: none; }
 /* Text and instruments stay readable above the dark */
 #seabed { z-index: 7; }

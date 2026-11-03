@@ -132,3 +132,8 @@ nav a:hover { color: var(--sonar); }
   .hint { display: none; }
 }
 
+
+/* The iceberg speaks for itself: just a quiet caption that appears on hover */
+.hero-text { background: linear-gradient(transparent, rgba(0,0,0,.55)); padding: 18px 20px; opacity: 0; transition: opacity .4s; }
+#hero:hover .hero-text, #hero:focus-visible .hero-text { opacity: 1; }
+.hero-text .label { color: rgba(232,244,255,.85); letter-spacing: .3em; }
