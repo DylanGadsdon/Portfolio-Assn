@@ -11,23 +11,23 @@ import { SEA, size, px, rand, clamp, fx, splash, toast, wait } from './stage.js'
 
 // Where each kind lives (in vh), how big it is, how fast it moves, and its hover fact.
 const SPECIES = [
-  { kind: 'gull',    count: 3, zone: [176, 280], width: 72,  speed: 70, wave: 10, air: true,
+  { kind: 'gull',    count: 3, zone: [100, 160], width: 72,  speed: 70, wave: 10, air: true,
     tip: 'Herring gull · rides the wind above the waves' },
-  { kind: 'fish',    count: 3, zone: [298, 400], width: 100, speed: 50, wave: 6,
+  { kind: 'fish',    count: 3, zone: [178, 245], width: 100, speed: 50, wave: 6,
     tip: 'Anchovy school · sunlight zone, top 50 m' },
-  { kind: 'dolphin', count: 2, zone: [296, 340], width: 140, speed: 120, wave: 12,
+  { kind: 'dolphin', count: 2, zone: [174, 200], width: 140, speed: 120, wave: 12,
     tip: 'Bottlenose dolphin · usually near the surface' },
-  { kind: 'turtle',  count: 2, zone: [306, 380], width: 96,  speed: 28, wave: 8,
+  { kind: 'turtle',  count: 2, zone: [182, 235], width: 96,  speed: 28, wave: 8,
     tip: 'Green sea turtle · mostly in the top 40 m' },
-  { kind: 'whale',   count: 1, zone: [380, 470], width: 400, speed: 36, wave: 14,
+  { kind: 'whale',   count: 1, zone: [230, 290], width: 400, speed: 36, wave: 14,
     tip: 'Humpback whale · feeds in the top 200 m' },
-  { kind: 'submarine', count: 1, zone: [500, 600], width: 240, speed: 24, wave: 8,
+  { kind: 'submarine', count: 1, zone: [300, 345], width: 240, speed: 24, wave: 8,
     tip: 'The Logbook · click to climb aboard' },
-  { kind: 'squid',   count: 1, zone: [640, 820], width: 300, speed: 32, wave: 16,
+  { kind: 'squid',   count: 1, zone: [380, 445], width: 300, speed: 32, wave: 16,
     tip: 'Giant squid · 300–1,000 m, eyes the size of plates' },
-  { kind: 'jelly',   count: 5, zone: [700, 940], width: 46,  speed: 9,  wave: 18,
+  { kind: 'jelly',   count: 5, zone: [395, 470], width: 46,  speed: 9,  wave: 18,
     tip: 'Atolla jellyfish · flashes like a burglar alarm' },
-  { kind: 'angler',  count: 2, zone: [960, 1070], width: 110, speed: 16, wave: 6,
+  { kind: 'angler',  count: 2, zone: [480, 540], width: 110, speed: 16, wave: 6,
     tip: 'Anglerfish · 1,000–4,000 m, hunts with a light' },
 ];
 
@@ -37,7 +37,10 @@ const creatures = [];
 // Small screens get smaller animals
 const scaleFor = () => clamp(size.width / 1100, 0.42, 1);
 
-export function spawnCreatures() {
+// photos: { whale: '/media/world/whale.png', … } from Dylan's renders, if present
+let photos = {};
+export function spawnCreatures(found = {}) {
+  photos = found;
   for (const species of SPECIES) {
     for (let i = 0; i < species.count; i++) creatures.push(makeCreature(species));
   }
@@ -46,7 +49,11 @@ export function spawnCreatures() {
 function makeCreature(species) {
   const el = document.createElement('div');
   el.className = `creature ${species.kind}-c`;
-  el.innerHTML = `<span class="tip"></span><div class="flip"><div class="sprite">${art[species.kind]}</div></div>`;
+  // A photo cut-out if Dylan has added one (facing right), otherwise the drawing
+  const look = photos[species.kind]
+    ? `<img class="art photo" src="${photos[species.kind]}" alt="" draggable="false">`
+    : art[species.kind];
+  el.innerHTML = `<span class="tip"></span><div class="flip"><div class="sprite">${look}</div></div>`;
   el.querySelector('.tip').textContent = species.tip;
   layer.append(el);
 

@@ -1,7 +1,7 @@
 // public/js/world/stage.js — shared measurements and little helpers for the world.
 
-export const SEA = 290;              // sea level, in vh from the top (matches world.css)
-export const WORLD_HEIGHT = 1160;    // total height in vh
+export const SEA = 170;              // sea level, in vh from the top (matches world.css)
+export const WORLD_HEIGHT = 560;    // total height in vh
 
 export const world = document.querySelector('#world');
 export const effects = document.querySelector('#effects');
@@ -22,8 +22,8 @@ export const px = (vh) => vh * size.vh;
 // Real-world depth/altitude for a position in the world.
 // Piecewise-linear: each pair is [position in vh, metres]. Negative = below sea.
 const SCALE = [
-  [0, 2_000_000], [50, 420_000], [160, 100_000], [230, 12_000], [SEA, 0],
-  [450, -200], [700, -1000], [950, -4000], [1120, -6000], [WORLD_HEIGHT, -6200],
+  [0, 2_000_000], [25, 420_000], [90, 100_000], [130, 12_000], [SEA, 0],
+  [260, -200], [370, -1000], [470, -4000], [545, -6000], [WORLD_HEIGHT, -6200],
 ];
 export function metresAt(vh) {
   for (let i = 1; i < SCALE.length; i++) {
@@ -35,12 +35,12 @@ export function metresAt(vh) {
 }
 
 export function zoneAt(vh) {
-  if (vh < 160) return 'Space';
+  if (vh < 90) return 'Space';
   if (vh < SEA - 3) return 'Sky';
   if (vh < SEA + 6) return 'Sea level';
-  if (vh < 450) return 'Sunlight zone';
-  if (vh < 700) return 'Twilight zone';
-  if (vh < 950) return 'Midnight zone';
+  if (vh < 260) return 'Sunlight zone';
+  if (vh < 370) return 'Twilight zone';
+  if (vh < 470) return 'Midnight zone';
   return 'The abyss';
 }
 

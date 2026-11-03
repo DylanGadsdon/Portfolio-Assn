@@ -63,4 +63,19 @@ router.get('/', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /api/gallery/world — Dylan's photos for the iceberg page, by name.
+// Drop e.g. whale.png or sky.jpg into public/media/world/ and it replaces the
+// drawing. Returns { whale: '/media/world/whale.png', sky: '…', … }
+const WORLD_DIR = path.join(__dirname, '..', '..', 'public', 'media', 'world');
+router.get('/world', async (req, res) => {
+  const found = {};
+  let files = [];
+  try { files = await fs.readdir(WORLD_DIR); } catch { /* none yet */ }
+  for (const file of files) {
+    if (!IMAGE.test(file)) continue;
+    found[file.replace(/\.[^.]+$/, '').toLowerCase()] = `/media/world/${encodeURIComponent(file)}`;
+  }
+  res.json(found);
+});
+
 export default router;

@@ -1,6 +1,6 @@
 // public/js/world/main.js — starts everything on the world page.
 
-import { SEA, size, measure, px, metresAt, zoneAt } from './stage.js';
+import { SEA, WORLD_HEIGHT, size, measure, px, metresAt, zoneAt } from './stage.js';
 import { art } from './art.js';
 import { spawnCreatures, startLoop } from './creatures.js';
 import { startLiveData } from './livedata.js';
@@ -9,10 +9,29 @@ import { placePortfolio } from './portfolio.js';
 
 measure();
 
-// ---------- Static pieces of art ----------
-document.querySelector('#station').innerHTML = art.station;
-document.querySelector('#warship').innerHTML = art.warship;
-document.querySelector('#buoy .buoy-art').innerHTML = art.buoy;
+// ---------- Dylan's photos (replace the drawings wherever they exist) ----------
+let photos = {};
+try { photos = await (await fetch('/api/gallery/world')).json(); } catch { /* drawings it is */ }
+
+const photoOr = (name, drawing) =>
+  photos[name] ? `<img class="art photo" src="${photos[name]}" alt="" draggable="false">` : drawing;
+
+document.querySelector('#station').innerHTML = photoOr('station', art.station);
+document.querySelector('#warship').innerHTML = photoOr('warship', art.warship);
+document.querySelector('#buoy .buoy-art').innerHTML = photoOr('buoy', art.buoy);
+
+for (const [name, selector] of [['sky', '#sky'], ['ocean', '#sea']]) {
+  if (!photos[name]) continue;
+  const el = document.querySelector(selector);
+  el.style.setProperty('--photo', `url("${photos[name]}")`);
+  el.classList.add('photo');
+}
+if (photos.iceberg) {
+  // iceberg photo: an "over-under" shot. Its waterline is assumed to be halfway
+  // down; change --waterline in world.css if yours sits higher or lower.
+  document.querySelector('#iceberg-photo').src = photos.iceberg;
+  document.querySelector('#iceberg').classList.add('photo');
+}
 
 // ---------- Stars ----------
 function drawStars() {
@@ -54,7 +73,7 @@ function updateGauge() {
   const centreVh = (window.scrollY + window.innerHeight / 2) / size.vh;
   gaugeValue.textContent = formatMetres(metresAt(centreVh));
   gaugeZone.textContent = zoneAt(centreVh);
-  gaugeDot.style.top = `${Math.min(100, (centreVh / 1160) * 100)}%`;
+  gaugeDot.style.top = `${Math.min(100, (centreVh / WORLD_HEIGHT) * 100)}%`;
 }
 window.addEventListener('scroll', () => {
   if (!gaugeQueued) { gaugeQueued = true; requestAnimationFrame(updateGauge); }
@@ -79,7 +98,7 @@ document.querySelector('#iceberg').classList.add('rising');
 updateGauge();
 
 placePortfolio();
-spawnCreatures();
+spawnCreatures(photos);
 startLoop();
 startLiveData();
 setupRaid();

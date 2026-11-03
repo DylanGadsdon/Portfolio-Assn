@@ -13,11 +13,11 @@ import { art, personIcon } from './art.js';
 // ======================= Weather =======================
 
 const CITIES = [
-  { name: 'New York',    lat: 40.71, lon: -74.01,  colour: '#ff6b6b', x: 6,  y: 168 },
-  { name: 'London',      lat: 51.51, lon: -0.13,   colour: '#ffd166', x: 56, y: 176 },
-  { name: 'Bangkok',     lat: 13.76, lon: 100.50,  colour: '#06d6a0', x: 24, y: 193 },
-  { name: 'Los Angeles', lat: 34.05, lon: -118.24, colour: '#f78c6b', x: 72, y: 205 },
-  { name: 'Kyoto',       lat: 35.01, lon: 135.77,  colour: '#c77dff', x: 42, y: 219 },
+  { name: 'New York',    lat: 40.71, lon: -74.01,  colour: '#ff6b6b', x: 4,  y: 93 },
+  { name: 'London',      lat: 51.51, lon: -0.13,   colour: '#ffd166', x: 60, y: 96 },
+  { name: 'Bangkok',     lat: 13.76, lon: 100.50,  colour: '#06d6a0', x: 22, y: 108 },
+  { name: 'Los Angeles', lat: 34.05, lon: -118.24, colour: '#f78c6b', x: 78, y: 112 },
+  { name: 'Kyoto',       lat: 35.01, lon: 135.77,  colour: '#c77dff', x: 40, y: 95 },
 ];
 
 // WMO weather codes → words + symbol
@@ -40,7 +40,7 @@ function buildBalloons() {
     const wrap = document.createElement('div');
     wrap.className = 'balloon-wrap';
     wrap.style.setProperty('--x', `${city.x}%`);
-    wrap.style.top = `calc(var(--vh) * ${city.y - 160})`;   // #sky starts at 160vh
+    wrap.style.top = `calc(var(--vh) * ${city.y - 90})`;   // #sky starts at 90vh
     wrap.style.animationDelay = `${-i * 1.3}s`;
     wrap.style.color = city.colour;
     wrap.innerHTML = `${art.balloon}

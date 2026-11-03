@@ -7,7 +7,7 @@
 import { SEA, metresAt } from './stage.js';
 
 // Depths down the underwater part of the iceberg (vh from the iceberg's top)
-const SLOTS = [88, 190, 290, 380];
+const SLOTS = [62, 125, 188, 250];
 
 export async function placePortfolio() {
   const box = document.querySelector('#capsules');
@@ -23,7 +23,7 @@ export async function placePortfolio() {
 
   pieces.forEach((post, i) => {
     const y = SLOTS[i];
-    const depth = Math.round(-metresAt(SEA - 38 + y));
+    const depth = Math.round(-metresAt(SEA - 24 + y));
 
     const card = document.createElement('button');
     card.type = 'button';
