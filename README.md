@@ -2,7 +2,7 @@
 
 Individual blog project for **Berghs · Programming & Methods (ACE2627)**.
 
-The site is one vertical world: deep space at the top, an iceberg with my name on it at sea level, and the ocean below. My best work is frozen into the iceberg: click a piece and its film plays over the ocean. A submarine in the twilight zone takes you to **The Logbook**, the blog itself, on its own readable page. From orbit you can **zoom out** past the satellites, the planets and the Milky Way, all the way to the Big Bang.
+The home page is a wall of my work drifting on black (in the style of the Apple TV photo screensaver), with one tile always in the middle: **the Iceberg**. That opens a cinematic, scrollable world built around an iceberg photograph: space at the top, the iceberg at sea level, the deep ocean below. A submarine leads to **The Logbook**, the blog itself. From orbit you can **zoom out** past live satellites, the planets and the Milky Way to the Big Bang, and the credits roll you back to the wall of work.
 
 - **Persona:** Dylan, AI content creator and creative technologist
 - **Audience:** classmates, teachers, and creative clients looking at my AI film, brand and campaign work
@@ -30,7 +30,7 @@ The site is one vertical world: deep space at the top, an iceberg with my name o
 | 7 | AI API (PD) | **OpenRouter** writes an automatic summary of each new post, shown with the post. Can be regenerated |
 | 8 | SQL database (PD) | **PostgreSQL on Neon**: `posts`, `comments`, `users`, `session` tables |
 
-Extras in the world: draggable and clickable sea life at realistic depths, live moon phase and tidal pull (astronomy-engine), a live world-population estimate, a rocket trip to a space station, an alien raid and crash cycle, and a depth gauge.
+Extras: the gallery wall (35 images, a whole-library 3D spin every 20 s or on **S**), draggable sea life at realistic depths, live moon phase and tidal pull (astronomy-engine), a live world-population estimate, a space-station raid Easter egg, a realistic Earth (NASA imagery, day/night by the real Sun) with ~12,000 live satellites, and a depth gauge.
 
 ## How it's built
 
@@ -99,4 +99,10 @@ Built with Claude (Anthropic) as an AI pair programmer. The concept and design d
 
 ## Presentation
 
-Slides go in `presentation/`.
+Topic: **the AI API** (how each post gets its summary). The slides are in `presentation/` (exported PDF), with the code screenshots used in them in `presentation/img/`.
+
+## Adding work
+
+- **Gallery:** drop images or videos into `public/media/gallery/`, named `archive_title.jpg`.
+- **Iceberg page:** drop `sky.jpg`, `ocean.jpg`, `iceberg.jpg` or animal cut-outs (`whale.png`, `dolphin.png`, … facing right) into `public/media/world/` and they replace the drawings.
+- **Home tile:** `public/media/hero.jpg`.
