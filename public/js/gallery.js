@@ -6,8 +6,10 @@
 //    Every frame each tile drifts left by speed × time passed.
 //  - When a tile leaves the screen on the left it is recycled: moved to the
 //    right-hand end of its lane and given the next piece of work.
-//  - Every 10 s a few tiles flip over and swap to new work.
-//  - Every 30 s the whole wall spins: a wave of 360° turns sweeps across it.
+//  - Every 20 s the whole library swings round like a tornado: it pulls back,
+//    turns a full circle around a vertical axis (tiles spread out in depth so
+//    they sweep past at different distances), shows the other side, and flies
+//    back in. The pictures change while the tiles are edge-on.
 //
 // Each tile is two elements: an outer one that drifts (moved every frame)
 // and an inner button that spins (an animation). Splitting them stops the
@@ -22,8 +24,8 @@ const LAYERS = [
   { scale: 1.0,  speed: 40, opacity: 1,    lanes: 2, z: 3, gap: [420, 980] },
 ];
 const gapFor = (layer) => (layer.gap[0] + Math.random() * (layer.gap[1] - layer.gap[0])) * Math.min(1, W / 1440);
-const SHIFT_EVERY = 10_000;
-const SPIN_EVERY = 30_000;
+const SPIN_EVERY = 20_000;
+const SPIN_TIME = 2800;     // ms
 
 let items = [];          // everything that can be shown
 let shown = [];          // items after the archive filter
@@ -135,7 +137,7 @@ function makeTile(layer, lane, x) {
   el.append(button);
   wall.append(el);
 
-  const t = { el, button, layer, lane, x, y: 0, w: 0, h: 0 };
+  const t = { el, button, layer, lane, x, y: 0, w: 0, h: 0, spinZ: (Math.random() - 0.3) * 1400 };
   const item = takeItem();
   fill(button, item);
   sizeTile(t, item);
@@ -168,15 +170,52 @@ function build() {
 // ---------- Moving ----------
 
 let last = performance.now();
+let spinStart = null;     // time the current spin began, or null
+let lastAngle = 0;
+const hero = document.querySelector('#hero');
+
+// Smooth start and finish (0 → 1)
+const ease = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  for (const t of tiles) {
-    t.x -= t.layer.speed * dt;
-    if (t.x + t.w < -40) recycle(t);
-    t.el.style.transform = `translate3d(${t.x}px, ${t.y}px, 0)`;
+
+  // ---- the tornado spin ----
+  let angle = 0, pull = 0;
+  if (spinStart !== null) {
+    const p = Math.min(1, (now - spinStart) / SPIN_TIME);
+    angle = 360 * ease(p);
+    pull = Math.sin(Math.PI * p);            // 0 → 1 → 0: out, round, back in
+    // Edge-on moments: swap to new work at 90°, and back to facing forward at 270°
+    if (lastAngle < 90 && angle >= 90) for (const t of tiles) { fill(t.button, takeItem()); t.button.classList.add('mirror'); }
+    if (lastAngle < 270 && angle >= 270) for (const t of tiles) t.button.classList.remove('mirror');
+    lastAngle = angle;
+    if (p >= 1) { spinStart = null; angle = 0; pull = 0; lastAngle = 0; }
   }
+  wall.style.transform = pull
+    ? `translateZ(${-1500 * pull}px) rotateY(${angle}deg) rotateX(${6 * pull}deg)`
+    : '';
+
+  for (const t of tiles) {
+    t.x -= t.layer.speed * dt * (1 + 2 * pull);   // speeds up while it swirls
+    if (t.x + t.w < -40 && !pull) recycle(t);
+    const z = t.spinZ * pull;                     // spread out in depth during the spin
+    t.el.style.transform = `translate3d(${t.x}px, ${t.y}px, ${z}px)`;
+  }
+
+  // ---- the iceberg tile wanders slowly round the middle ----
+  const s = now / 1000;
+  const hx = Math.sin(s / 9) * W * 0.12 + Math.sin(s / 4.3) * W * 0.02;
+  const hy = Math.sin(s / 6.1) * H * 0.07 + Math.cos(s / 3.7) * H * 0.015;
+  const tilt = Math.sin(s / 5) * 2.2 + Math.sin(angle * Math.PI / 180) * 10;
+  hero.style.transform = `translate(calc(-50% + ${hx}px), calc(-50% + ${hy}px)) rotate(${tilt * 0.3}deg) rotateY(${tilt}deg)`;
+
   requestAnimationFrame(frame);
+}
+
+function spin() {
+  if (spinStart === null && !document.hidden) spinStart = performance.now();
 }
 
 function recycle(t) {
@@ -188,33 +227,6 @@ function recycle(t) {
   sizeTile(t, item);
   t.x = right + gapFor(t.layer);
   placeInLane(t);
-}
-
-// Flip one tile to the next piece of work, swapping the picture while it's edge-on
-function flip(t, delay = 0, duration = 1100) {
-  const anim = t.button.animate(
-    [{ transform: 'rotateY(0)' }, { transform: 'translateZ(120px) rotateY(180deg)' }, { transform: 'rotateY(360deg)' }],
-    { duration, delay, easing: 'cubic-bezier(.45,0,.25,1)' },
-  );
-  setTimeout(() => fill(t.button, takeItem()), delay + duration * 0.25);
-  return anim;
-}
-
-// Every 10 s: a handful of on-screen tiles shift to new work
-function shift() {
-  const visible = tiles.filter((t) => t.x > 0 && t.x + t.w < W);
-  for (let i = 0; i < 4 && visible.length; i++) {
-    const t = visible.splice(Math.floor(Math.random() * visible.length), 1)[0];
-    flip(t, i * 180, 900);
-  }
-}
-
-// Every 30 s: the whole library spins, a wave travelling left to right
-function spin() {
-  for (const t of tiles) {
-    if (t.x > W + 50 || t.x + t.w < -50) continue;
-    flip(t, (t.x / W) * 900, 1600);
-  }
 }
 
 // ---------- Archive filter ----------
@@ -300,7 +312,8 @@ function loadHero() {
     img.onerror = () => tryNext(list.slice(1));
     img.src = list[0];
   };
-  tryNext(['/media/hero.jpg', '/media/hero.png', '/media/hero.webp']);
+  // Dylan on the iceberg if it's there, otherwise the iceberg itself
+  tryNext(['/media/hero.jpg', '/media/hero.png', '/media/hero.webp', '/media/world/iceberg.jpg']);
 
   const hero = document.querySelector('#hero');
   hero.addEventListener('click', (e) => {
@@ -338,5 +351,6 @@ await loadItems();
 drawArchives();
 build();
 requestAnimationFrame(frame);
-setInterval(shift, SHIFT_EVERY);
 setInterval(spin, SPIN_EVERY);
+// Press S to spin on demand (handy in a live demo)
+addEventListener('keydown', (e) => { if (e.key.toLowerCase() === 's' && !viewer.open) spin(); });

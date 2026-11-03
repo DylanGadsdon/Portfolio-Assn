@@ -62,14 +62,14 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 #bigbang p { line-height: 1.6; }
 
 /* Credits: hidden below the text, then everything scrolls up like the end of a film */
-.credits { margin-top: 70vh; }
+.credits { margin-top: 45vh; }
 .credits h2 { font-family: var(--font-head); font-weight: 600; font-size: clamp(1.6rem, 5vw, 2.6rem); margin: 6px 0 40px; }
 .credits dl { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; margin: 0; text-align: left; }
 .credits dt { text-align: right; font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: #8a4a1e; align-self: center; }
 .credits dd { margin: 0; font-family: var(--font-head); font-size: 1.1rem; }
-.credits .fin { margin-top: 30vh; font-family: var(--font-head); font-size: 1.6rem; }
+.credits .fin { margin-top: 22vh; font-family: var(--font-head); font-size: 1.6rem; }
 #bigbang.rolling { place-items: start center; }
-#bigbang.rolling .roll { animation: credits var(--roll-time, 26s) linear forwards; }
+#bigbang.rolling .roll { animation: credits var(--roll-time, 13s) linear forwards; }
 @keyframes credits { from { transform: translateY(30vh); } to { transform: translateY(calc(-100% + 30vh)); } }
 
 .restart {
