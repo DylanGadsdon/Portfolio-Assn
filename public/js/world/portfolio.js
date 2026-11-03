@@ -7,7 +7,6 @@
 // Depths in the world (vh from the top), down in the dark water
 const PIECES = [
   { y: 270, src: '/media/archive/intrusive-thoughts.mp4', title: 'Intrusive Thoughts', kind: 'Art installation · 001' },
-  { y: 385, src: '/media/archive/cats-and-gats.mp4', title: 'Cats & Gats', kind: 'Concept film · 002' },
 ];
 
 export function placePortfolio() {
