@@ -13,11 +13,11 @@ import { art, personIcon } from './art.js';
 // ======================= Weather =======================
 
 const CITIES = [
-  { name: 'New York',    lat: 40.71, lon: -74.01,  colour: '#ff6b6b', x: 4,  y: 93 },
-  { name: 'London',      lat: 51.51, lon: -0.13,   colour: '#ffd166', x: 60, y: 96 },
-  { name: 'Bangkok',     lat: 13.76, lon: 100.50,  colour: '#06d6a0', x: 22, y: 108 },
-  { name: 'Los Angeles', lat: 34.05, lon: -118.24, colour: '#f78c6b', x: 78, y: 112 },
-  { name: 'Kyoto',       lat: 35.01, lon: 135.77,  colour: '#c77dff', x: 40, y: 95 },
+  { name: 'New York',    lat: 40.71, lon: -74.01,  colour: '#ff6b6b', x: 3,  y: 92 },
+  { name: 'London',      lat: 51.51, lon: -0.13,   colour: '#ffd166', x: 3,  y: 103 },
+  { name: 'Bangkok',     lat: 13.76, lon: 100.50,  colour: '#06d6a0', x: 86, y: 92 },
+  { name: 'Los Angeles', lat: 34.05, lon: -118.24, colour: '#f78c6b', x: 86, y: 103 },
+  { name: 'Kyoto',       lat: 35.01, lon: 135.77,  colour: '#c77dff', x: 3,  y: 114 },
 ];
 
 // WMO weather codes → words + symbol
@@ -137,7 +137,7 @@ function drawSeismograph(quakes) {
   ctx.strokeStyle = 'rgba(95,224,196,.25)';
   ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
 
-  ctx.strokeStyle = '#ffb36b';
+  ctx.strokeStyle = '#bfe9ff';
   ctx.lineWidth = 1.2;
   ctx.beginPath();
   for (let x = 0; x <= w; x += 1) {

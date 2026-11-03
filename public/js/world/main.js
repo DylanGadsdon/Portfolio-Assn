@@ -5,7 +5,6 @@ import { art } from './art.js';
 import { spawnCreatures, startLoop } from './creatures.js';
 import { startLiveData } from './livedata.js';
 import { setupRaid } from './raid.js';
-import { placePortfolio } from './portfolio.js';
 
 measure();
 
@@ -93,11 +92,10 @@ window.addEventListener('resize', () => {
 drawStars();
 // Open at sea level, with the iceberg tip in view, then let it rise
 window.history.scrollRestoration = 'manual';
-window.scrollTo(0, px(SEA) - window.innerHeight * 0.62);
+window.scrollTo(0, px(SEA) - window.innerHeight * 0.68);
 document.querySelector('#iceberg').classList.add('rising');
 updateGauge();
 
-placePortfolio();
 spawnCreatures(photos);
 startLoop();
 startLiveData();
