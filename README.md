@@ -12,7 +12,8 @@ The site is one vertical world: deep space at the top, an iceberg with my name o
 
 | URL | What it is |
 |---|---|
-| `/` | The world: space → sky → iceberg → ocean → seabed |
+| `/` | Home: an Apple TV-style wall of work; the fixed tile leads into the iceberg |
+| `/iceberg` | The world: space → sky → iceberg → ocean → seabed |
 | `/blog` | The Logbook: post list, posts, sign-in, writing, comments, search |
 | `/universe` | The zoom-out, from Earth to the Big Bang |
 
@@ -89,6 +90,7 @@ OPENROUTER_MODEL=~anthropic/claude-sonnet-latest                      # optional
 - **Comment moderation and rate limiting.** There's a honeypot field against simple bots and strict length limits, but no CAPTCHA or per-IP limits.
 - **Real-time population data.** No free live API exists. The counter is a model built from UN World Population Prospects 2024 rates, like the well-known world clocks.
 - **Exact sky positions in the Milky Way view.** The galaxy is generated. Real nearby stars are placed at their true distances, but the frame isn't converted to galactic coordinates.
+- **Earth textures** are NASA's public-domain Blue Marble (day) and Black Marble (night lights), taken from the MIT-licensed `three-globe` package; the night map was reduced to city lights only.
 - **A build step or framework.** Plain ES modules keep every file readable and explainable.
 
 ## Use of AI assistance

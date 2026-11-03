@@ -23,18 +23,73 @@ export function createEarth({ addLabel, setStatus }) {
   const sunDir = eqToThree(A.GeoVector(A.Body.Sun, new Date(), true)).normalize();
   const sun = new THREE.DirectionalLight(0xffffff, 2.6);
   sun.position.copy(sunDir.clone().multiplyScalar(100));
-  scene.add(sun, new THREE.AmbientLight(0x6688aa, 0.55));
+  scene.add(sun, new THREE.AmbientLight(0x6688aa, 0.06));
 
   // ---- Earth ----
-  const texture = new THREE.CanvasTexture(drawEarthMap());
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 4;
-  const earth = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 96, 64),
-    new THREE.MeshPhongMaterial({ map: texture, shininess: 12, specular: 0x223344 }),
-  );
+  // ---- Earth: NASA Blue Marble by day, city lights by night ----
+  // A small "shader" (a program that runs on the graphics card for every pixel)
+  // mixes the two maps by how much sunlight each point gets, and adds the
+  // glint of the sun on the oceans. Falls back to a drawn map while loading.
+  const loader = new THREE.TextureLoader();
+  const tex = (url, srgb = true) => {
+    const t = loader.load(url);
+    if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 8;
+    return t;
+  };
+  const sunUniform = { value: sunDir.clone() };
+  const earthMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      dayMap: { value: tex('/media/earth/day.jpg') },
+      nightMap: { value: tex('/media/earth/night.jpg') },
+      waterMap: { value: tex('/media/earth/water.jpg', false) },
+      sunDir: sunUniform,
+    },
+    // (the #include lines opt in to the page's logarithmic depth buffer, which
+    //  lets one camera handle both satellites and the Moon without flicker)
+    vertexShader: `
+      #include <common>
+      #include <logdepthbuf_pars_vertex>
+      varying vec2 vUv; varying vec3 vNormal; varying vec3 vPos;
+      void main() {
+        vUv = uv;
+        vNormal = normalize(mat3(modelMatrix) * normal);
+        vPos = (modelMatrix * vec4(position, 1.0)).xyz;
+        gl_Position = projectionMatrix * viewMatrix * vec4(vPos, 1.0);
+        #include <logdepthbuf_vertex>
+      }`,
+    fragmentShader: `
+      #include <logdepthbuf_pars_fragment>
+      uniform sampler2D dayMap, nightMap, waterMap;
+      uniform vec3 sunDir;
+      varying vec2 vUv; varying vec3 vNormal; varying vec3 vPos;
+      void main() {
+        #include <logdepthbuf_fragment>
+        vec3 n = normalize(vNormal);
+        float light = dot(n, sunDir);                       // 1 = sun overhead, <0 = night
+        float day = smoothstep(-0.08, 0.12, light);         // soft line between day and night
+        vec3 base = vec3(0.0005, 0.0009, 0.002);            // faint glow so the night isn't pure black
+        vec3 dayCol = texture2D(dayMap, vUv).rgb * (0.02 + 1.1 * pow(max(light, 0.0), 0.75)) + base;
+        // night.jpg holds only the city lights (everything else is black)
+        vec3 nightCol = texture2D(nightMap, vUv).rgb * 1.3 + base;
+        vec3 col = mix(nightCol, dayCol, day);
+        // sunlight glinting off the sea
+        vec3 view = normalize(cameraPosition - vPos);
+        float spec = pow(max(dot(n, normalize(sunDir + view)), 0.0), 60.0);
+        col += vec3(1.0, 0.92, 0.78) * spec * texture2D(waterMap, vUv).r * day * 0.55;
+        gl_FragColor = vec4(col, 1.0);
+        #include <colorspace_fragment>
+      }`,
+  });
+  const earth = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 96), earthMaterial);
   scene.add(earth);
-  loadLand(texture);
+
+  // Clouds: a slightly bigger, see-through sphere, lit by the same sun
+  const clouds = new THREE.Mesh(
+    new THREE.SphereGeometry(1.007, 96, 64),
+    new THREE.MeshLambertMaterial({ color: 0xffffff, alphaMap: tex('/media/earth/clouds.jpg', false), transparent: true, depthWrite: false, opacity: 0.9 }),
+  );
+  scene.add(clouds);
 
   // Atmosphere: a slightly bigger sphere that glows at the edges
   const atmosphere = new THREE.Mesh(
@@ -42,9 +97,15 @@ export function createEarth({ addLabel, setStatus }) {
     new THREE.ShaderMaterial({
       transparent: true, depthWrite: false, side: THREE.BackSide, blending: THREE.AdditiveBlending,
       uniforms: { opacity: { value: 1 } },
-      vertexShader: `varying vec3 vN; void main(){ vN = normalize(normalMatrix * normal);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-      fragmentShader: `uniform float opacity; varying vec3 vN; void main(){
+      vertexShader: `#include <common>
+        #include <logdepthbuf_pars_vertex>
+        varying vec3 vN; void main(){ vN = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+        #include <logdepthbuf_vertex>
+        }`,
+      fragmentShader: `#include <logdepthbuf_pars_fragment>
+        uniform float opacity; varying vec3 vN; void main(){
+        #include <logdepthbuf_fragment>
         float i = pow(0.75 - dot(vN, vec3(0.0,0.0,1.0)), 3.0);
         gl_FragColor = vec4(0.35, 0.65, 1.0, 1.0) * i * opacity; }`,
     }),
@@ -185,6 +246,8 @@ export function createEarth({ addLabel, setStatus }) {
     update(z, now) {
       // Earth turns once a day: rotate by sidereal time so the map lines up with the sky
       earth.rotation.y = gstime(now);
+      clouds.rotation.y = earth.rotation.y + now.getTime() / 4e7;   // clouds drift slowly
+      clouds.material.opacity = 0.9 * (1 - smooth(9.4, 10.2, z));
       atmosphere.material.uniforms.opacity.value = 1 - smooth(9.7, 10.5, z);
       if (!points || z > 10.5) return;
 
@@ -222,56 +285,4 @@ export function createEarth({ addLabel, setStatus }) {
 function hexToRgba(hex) {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},1)`;
-}
-
-// ---- Earth's surface, drawn on a canvas (equirectangular map) ----
-function drawEarthMap(land) {
-  const c = document.createElement('canvas');
-  c.width = 2048; c.height = 1024;
-  const g = c.getContext('2d');
-  const sea = g.createLinearGradient(0, 0, 0, 1024);
-  sea.addColorStop(0, '#0c2a48'); sea.addColorStop(0.5, '#0f3a63'); sea.addColorStop(1, '#0c2a48');
-  g.fillStyle = sea;
-  g.fillRect(0, 0, 2048, 1024);
-  // faint latitude/longitude grid
-  g.strokeStyle = 'rgba(140,200,255,0.10)';
-  g.lineWidth = 1;
-  for (let lon = -180; lon <= 180; lon += 30) { const x = ((lon + 180) / 360) * 2048; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 1024); g.stroke(); }
-  for (let lat = -60; lat <= 60; lat += 30) { const y = ((90 - lat) / 180) * 1024; g.beginPath(); g.moveTo(0, y); g.lineTo(2048, y); g.stroke(); }
-
-  if (land) {
-    g.fillStyle = '#3f7d5c';
-    g.strokeStyle = '#7fc29b';
-    g.lineWidth = 1.2;
-    for (const polygon of land) {
-      g.beginPath();
-      for (const ring of polygon) {
-        ring.forEach(([lon, lat], i) => {
-          const x = ((lon + 180) / 360) * 2048;
-          const y = ((90 - lat) / 180) * 1024;
-          if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
-        });
-        g.closePath();
-      }
-      g.fill('evenodd');
-      g.stroke();
-    }
-    // polar ice caps
-    g.fillStyle = 'rgba(235,245,255,0.85)';
-    g.fillRect(0, 0, 2048, 18);
-  }
-  return c;
-}
-
-async function loadLand(texture) {
-  try {
-    const topo = await (await fetch('/vendor/world-atlas/land-110m.json')).json();
-    const land = window.topojson.feature(topo, topo.objects.land);
-    const polygons = land.features.flatMap((f) =>
-      f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates);
-    texture.image = drawEarthMap(polygons);
-    texture.needsUpdate = true;
-  } catch (err) {
-    console.warn('Could not draw continents', err);
-  }
 }
