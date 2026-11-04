@@ -5,23 +5,29 @@
 // The browser turns those numbers into live positions with satellite.js.
 //
 // Why go through our server instead of fetching CelesTrak from the browser?
-//   - CelesTrak only updates every ~2 hours and asks people not to over-fetch.
-//     The server fetches once, keeps a copy in memory (a cache), and every
-//     visitor gets that copy. One request to CelesTrak, not one per visitor.
-//   - One place to handle errors.
+//   - CelesTrak only updates every ~2 hours and blocks anyone who downloads the
+//     same data more often than that. So the server fetches once and keeps a
+//     copy: in memory, AND on disk (server/cache/), so restarting the server
+//     during development doesn't trigger another download and get us blocked.
+//   - If CelesTrak is down or says no, an older copy is better than nothing:
+//     orbits drift slowly, so a day-old copy still looks right.
 
 import { Router } from 'express';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const router = Router();
+const CACHE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'cache');
 
 const SOURCES = {
-  // Space stations (ISS, Tiangong…): small list, always loaded
+  // Space stations (ISS, Tiangong…): small list, used if the big one fails
   stations: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle',
-  // Every active satellite: ~10,000+
+  // Every active satellite: ~12,000, including all of Starlink
   active: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle',
 };
 const TWO_HOURS = 2 * 60 * 60 * 1000;
-const cache = {};   // { stations: { text, fetchedAt }, active: {…} }
+const cache = {};   // { stations: { sats, fetchedAt }, active: {…} }
 
 // Turn the raw text into [{ name, line1, line2 }, …]
 function parseTLE(text) {
@@ -36,29 +42,49 @@ function parseTLE(text) {
   return sats;
 }
 
+const diskFile = (group) => path.join(CACHE_DIR, `satellites-${group}.json`);
+
+async function readDisk(group) {
+  try { return JSON.parse(await fs.readFile(diskFile(group), 'utf8')); } catch { return null; }
+}
+
+async function writeDisk(group, data) {
+  try {
+    await fs.mkdir(CACHE_DIR, { recursive: true });
+    await fs.writeFile(diskFile(group), JSON.stringify(data));
+  } catch (err) { console.warn('Could not save satellite cache', err.message); }
+}
+
+async function load(group) {
+  // 1. Memory, then disk: use it if it's less than two hours old
+  if (!cache[group]) cache[group] = await readDisk(group);
+  const have = cache[group];
+  if (have && Date.now() - have.fetchedAt < TWO_HOURS) return have;
+
+  // 2. Otherwise download a fresh copy
+  try {
+    const response = await fetch(SOURCES[group], {
+      headers: { 'User-Agent': 'EXIT-archive student project (Berghs)' },
+      signal: AbortSignal.timeout(60000),   // the full list is a few MB: give it time
+    });
+    if (!response.ok) throw new Error(`CelesTrak ${response.status}`);
+    const sats = parseTLE(await response.text());
+    if (sats.length < 10) throw new Error('CelesTrak sent no orbits');
+    cache[group] = { sats, fetchedAt: Date.now() };
+    writeDisk(group, cache[group]);
+    return cache[group];
+  } catch (err) {
+    console.error(`Satellite fetch (${group}) failed:`, err.message);
+    return have;   // 3. An old copy, or null if we've never had one
+  }
+}
+
 router.get('/', async (req, res) => {
   const group = req.query.group === 'stations' ? 'stations' : 'active';
-  const cached = cache[group];
-
-  if (!cached || Date.now() - cached.fetchedAt > TWO_HOURS) {
-    try {
-      const response = await fetch(SOURCES[group], {
-        headers: { 'User-Agent': 'iceberg-blog student project' },
-        signal: AbortSignal.timeout(15000),
-      });
-      if (!response.ok) throw new Error(`CelesTrak ${response.status}`);
-      const text = await response.text();
-      cache[group] = { sats: parseTLE(text), fetchedAt: Date.now() };
-    } catch (err) {
-      console.error('Satellite fetch failed:', err.message);
-      // Old data is better than none: orbits drift slowly
-      if (!cached) return res.status(503).json({ error: 'Satellite feed unavailable' });
-    }
-  }
-
-  const { sats, fetchedAt } = cache[group];
+  const data = await load(group);
+  if (!data) return res.status(503).json({ error: 'Satellite feed unavailable' });
   res.set('Cache-Control', 'public, max-age=600');
-  res.json({ fetchedAt, count: sats.length, sats });
+  res.json({ fetchedAt: data.fetchedAt, count: data.sats.length, sats: data.sats });
 });
 
 export default router;

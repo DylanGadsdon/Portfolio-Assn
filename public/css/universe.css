@@ -83,3 +83,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
   #power { font-size: 1.4rem; }
   .readout { max-width: 200px; }
 }
+
+/* "What's over me?": your satellites turn yellow */
+#overhead {
+  font: inherit; font-size: .72rem; letter-spacing: .06em; cursor: pointer; text-align: left;
+  color: #ffe08c; background: transparent; border: 1px solid rgba(255,224,140,.45); border-radius: 999px; padding: 6px 12px;
+}
+#overhead:hover { background: rgba(255,224,140,.12); }
+#overhead[aria-pressed="true"] { background: rgba(255,214,64,.15); }

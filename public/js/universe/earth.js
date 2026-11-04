@@ -151,8 +151,15 @@ export function createEarth({ addLabel, setStatus }) {
     [/^ISS \(ZARYA\)/, 'ISS · International Space Station', '#ffe08c'],
     [/^CSS \(TIANHE\)/, 'Tiangong · Chinese space station', '#ffb38a'],
     [/^HST$/, 'Hubble Space Telescope', '#c9b6ff'],
-    [/^STARLINK-/, 'Starlink · one of ~7,000', '#9fe7ff'],
+    [/^STARLINK-/, 'Starlink · one of thousands', '#9fe7ff'],
+    [/^ONEWEB-/, 'OneWeb · internet from orbit', '#9fe7ff'],
+    [/^LANDSAT 9/, 'Landsat 9 · photographs the Earth', '#a8f0c6'],
+    [/^SENTINEL-2/, 'Sentinel-2 · Europe\'s eye on the land', '#a8f0c6'],
+    [/^NOAA 2[01]/, 'NOAA weather satellite', '#a8f0c6'],
+    [/^IRIDIUM \d/, 'Iridium · satellite phones', '#9fe7ff'],
     [/^GPS BIII/, 'GPS satellite · 20,200 km up', '#ffd166'],
+    [/^GALILEO|^GSAT0\d/, 'Galileo · Europe\'s GPS', '#ffd166'],
+    [/^GOES[- ]1[89]/, 'GOES · weather, 35,786 km up', '#ff9ad5'],
   ];
 
   async function loadSatellites() {
@@ -176,7 +183,7 @@ export function createEarth({ addLabel, setStatus }) {
   function build() {
     const n = sats.length;
     base = { p: new Float32Array(n * 3), q: new Float32Array(n * 3), w: new Float32Array(n), t: new Float64Array(n) };
-    points = pointCloud(new Float32Array(n * 3), new Float32Array(n * 3), { size: 2.4 });
+    points = pointCloud(new Float32Array(n * 3), new Float32Array(n * 3), { size: 2.6 });
     points.frustumCulled = false;
     scene.add(points);
 
@@ -187,7 +194,7 @@ export function createEarth({ addLabel, setStatus }) {
       const trail = new THREE.Line(new THREE.BufferGeometry(),
         new THREE.LineBasicMaterial({ color: colour, transparent: true, opacity: 0.45 }));
       scene.add(dot, trail);
-      const high = /GPS/.test(label);
+      const high = /GPS|Galileo|GOES/.test(label);
       addLabel(label, () => dot.position, high ? [7.5, 8.9] : [6.9, 8.0], { scene: 'earth', big: index === 0 || /ISS/.test(label) });
       famous.push({ index, dot, trail, trailAt: 0 });
     }
@@ -197,7 +204,8 @@ export function createEarth({ addLabel, setStatus }) {
     points.geometry.attributes.color.needsUpdate = true;
   }
 
-  const colour = new THREE.Color();
+  const WHITE = [0.92, 0.95, 1];
+  const YELLOW = [1, 0.84, 0.25];
   const P = new THREE.Vector3(), V = new THREE.Vector3(), K = new THREE.Vector3();
 
   // EXACT position + velocity from SGP4, stored as the start of the next glide
@@ -215,10 +223,8 @@ export function createEarth({ addLabel, setStatus }) {
     base.w[i] = V.length() / r;                  // radians per second
     base.t[i] = date.getTime();
 
-    // Colour by height: low orbit cyan, middle (GPS etc.) yellow, geostationary pink
-    const alt = (r - 1) * 6371;
-    colour.set(alt < 2000 ? 0x7fe8ff : alt < 30000 ? 0xffd166 : 0xff7ac8);
-    points.geometry.attributes.color.array.set([colour.r, colour.g, colour.b], i * 3);
+    // Every satellite is a white dot (the yellow "over you" colour is set in update)
+    points.geometry.attributes.color.array.set(WHITE, i * 3);
   }
 
   // A labelled satellite's path over one full orbit, from SGP4
@@ -234,6 +240,35 @@ export function createEarth({ addLabel, setStatus }) {
     f.trail.geometry = new THREE.BufferGeometry().setFromPoints(pts);
     f.trailAt = date.getTime();
   }
+
+  // ---- What's over me? ----
+  // The browser tells us roughly where you are (only if you say yes). A point on
+  // the ground turns with the Earth, so its position in space depends on the time.
+  let observer = null;        // { lat, lon } in radians
+  let lastCount = 0;
+  let marker = null;
+  const button = document.querySelector('#overhead');
+  const overheadText = (n) => {
+    button.textContent = `◉ ${n.toLocaleString('en-GB')} satellites above you now`;
+  };
+  function observerVector(date) {
+    const a = observer.lon + gstime(date);                       // longitude measured in space
+    const v = new THREE.Vector3(Math.cos(observer.lat) * Math.cos(a), Math.sin(observer.lat), -Math.cos(observer.lat) * Math.sin(a));
+    marker?.position.copy(v);
+    return v;
+  }
+  button?.addEventListener('click', () => {
+    if (!navigator.geolocation) { button.textContent = 'Location isn’t available in this browser'; return; }
+    button.textContent = 'Finding you…';
+    navigator.geolocation.getCurrentPosition(({ coords }) => {
+      observer = { lat: coords.latitude * Math.PI / 180, lon: coords.longitude * Math.PI / 180 };
+      marker = glow('rgba(255,214,64,1)', 9);
+      scene.add(marker);
+      addLabel('You are here', () => marker.position, [6.5, 8.3], { scene: 'earth' });
+      button.setAttribute('aria-pressed', 'true');
+    }, () => { button.textContent = 'Location blocked: allow it to see what’s above you'; },
+    { maximumAge: 600000, timeout: 15000 });
+  });
 
   loadSatellites();
 
@@ -261,16 +296,31 @@ export function createEarth({ addLabel, setStatus }) {
 
       // FAST glide for everyone: position = p·cos(θ) + q·sin(θ)
       const out = points.geometry.attributes.position.array;
+      const col = points.geometry.attributes.color.array;
       const { p, q, w, t } = base;
       const ms = now.getTime();
+      const me = observer && observerVector(now);   // where you are, in space, right now
+      let overhead = 0;
       for (let i = 0; i < sats.length; i++) {
         const th = w[i] * (ms - t[i]) / 1000;
         const c = Math.cos(th), s = Math.sin(th), j = i * 3;
         out[j] = p[j] * c + q[j] * s;
         out[j + 1] = p[j + 1] * c + q[j + 1] * s;
         out[j + 2] = p[j + 2] * c + q[j + 2] * s;
+        if (me) {
+          // Above your horizon by more than 10°? (angle between "straight up" and the line to it)
+          const dx = out[j] - me.x, dy = out[j + 1] - me.y, dz = out[j + 2] - me.z;
+          const up = (dx * me.x + dy * me.y + dz * me.z) / Math.hypot(dx, dy, dz);
+          const above = up > 0.17 && out[j] * out[j] + out[j + 1] * out[j + 1] + out[j + 2] * out[j + 2] > 0.5;
+          col.set(above ? YELLOW : WHITE, j);
+          if (above) overhead++;
+        }
       }
       points.geometry.attributes.position.needsUpdate = true;
+      if (me) {
+        points.geometry.attributes.color.needsUpdate = true;
+        if (ms - lastCount > 1000) { lastCount = ms; overheadText(overhead); }
+      }
 
       // Labelled satellites: exact every frame, trail redrawn every simulated 5 min
       for (const f of famous) {

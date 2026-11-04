@@ -17,7 +17,7 @@ const router = Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const GALLERY_DIR = path.join(__dirname, '..', '..', 'public', 'media', 'gallery');
 
-const IMAGE = /\.(jpe?g|png|webp|avif|gif)$/i;
+const IMAGE = /\.(jpe?g|png|webp|avif|gif|svg)$/i;
 const VIDEO = /\.(mp4|webm|mov)$/i;
 
 // "ostrich-runway" → "Ostrich runway"
