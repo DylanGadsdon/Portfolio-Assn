@@ -266,3 +266,16 @@ dialog.cinematic.out { opacity: 0; transition: opacity .4s; }
 .blast.green { background: radial-gradient(#fff 0 20%, #d6ffd9 35%, #57ff7a 55%, rgba(40,255,90,.3) 70%, transparent 72%); }
 .shard { box-shadow: 0 0 6px rgba(90,255,120,.8); }
 dialog.cinematic, dialog.cinematic:focus, dialog.cinematic video:focus { outline: none; }
+
+/* ---------- The mothership clip, blended into the sky ---------- */
+#mothership {
+  position: absolute; z-index: 1; pointer-events: none;
+  width: clamp(220px, 26vw, 420px); aspect-ratio: 2 / 3; object-fit: cover;
+  mix-blend-mode: screen;                                   /* black drops out, light stays */
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 45%, transparent 100%);
+          mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 45%, transparent 100%);
+  filter: contrast(1.2) brightness(.9);   /* deeper blacks so it melts into space; the green stays green */
+  opacity: 0; transition: opacity 1.6s ease;
+}
+#mothership.on { opacity: .9; }
+.deathbeam.green { background: linear-gradient(90deg, #fff, #d6ffd9 30%, #57ff7a); box-shadow: 0 0 10px #57ff7a, 0 0 30px rgba(60,255,110,.8); }

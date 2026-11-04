@@ -1,65 +1,74 @@
-// public/js/world/raid.js — the raid on the space station.
-//   Click the station: the mothership's attack plays as a short cinematic
-//   (Dylan's clip, /media/world/raid.mp4). When it ends, the station in the
-//   scene goes up in a green flash and breaks apart, then is quietly rebuilt
-//   a little later so it can happen again.
+// public/js/world/raid.js — the raid on the space station, in the background.
+//   Dylan's mothership clip (/media/world/raid.mp4) is blended straight into
+//   the sky: its black background drops out (mix-blend-mode: screen), the edges
+//   fade into space (a radial mask) and it's tinted to match the scene. When it
+//   finishes firing, the station breaks apart in green, then is quietly rebuilt.
+//   Click the station to start it, or wait: it happens by itself.
 
-import { wait, rand, fx, worldRect } from './stage.js';
+import { px, size, wait, rand, fx, worldRect } from './stage.js';
 
 const station = document.querySelector('#station');
+let ship;          // the <video>, created in setupRaid
 let running = false;
 
 export function setupRaid() {
+  ship = document.createElement('video');
+  ship.id = 'mothership';
+  Object.assign(ship, { src: '/media/world/raid.mp4', muted: true, playsInline: true, preload: 'auto' });
+  ship.setAttribute('aria-hidden', 'true');
+  station.after(ship);
+
   place();
   addEventListener('resize', place);
   station.style.cursor = 'pointer';
   station.title = 'Space station';
-  station.addEventListener('click', start);
+  station.addEventListener('click', () => start(true));
+
+  // If the station has been on screen for 20 s with nothing happening, it happens anyway (silently)
+  let visibleSince = null;
+  new IntersectionObserver(([entry]) => {
+    visibleSince = entry.isIntersecting ? Date.now() : null;
+  }, { threshold: 0.6 }).observe(station);
+  setInterval(() => {
+    if (!running && visibleSince && Date.now() - visibleSince > 20000) {
+      start(false).finally(() => { visibleSince = Date.now(); });
+    }
+  }, 2000);
 }
 
 function place() {
-  // off to the right and small: something happening in the background
-  station.style.left = `${innerWidth * 0.66}px`;
-  station.style.top = `calc(var(--vh) * 30)`;
+  // Station off to the right; the mothership looms further back on the left
+  station.style.left = `${size.width * 0.66}px`;
+  station.style.top = `${px(30)}px`;
+  ship.style.left = `${size.width * 0.28}px`;
+  ship.style.top = `${px(4)}px`;
 }
 
-async function start() {
+async function start(withSound) {
   if (running) return;
   running = true;
-  try {
-    await playCinematic();
-    await destroyStation();
-  } finally { running = false; }
+  try { await raid(withSound); } finally { running = false; }
 }
 
-// ---------- 1. The cinematic ----------
-// A <dialog> over the page with the clip in it. It closes when the clip ends,
-// when you click outside it, or with Esc.
-function playCinematic() {
-  return new Promise((resolve) => {
-    const dialog = document.createElement('dialog');
-    dialog.className = 'cinematic';
-    dialog.setAttribute('aria-label', 'The raid');
-    const video = document.createElement('video');
-    Object.assign(video, { src: '/media/world/raid.mp4', playsInline: true, autoplay: true });
-    dialog.append(video);
-    document.body.append(dialog);
-    dialog.showModal();
-    video.play().catch(() => { video.muted = true; video.play().catch(() => {}); });
+async function raid(withSound) {
+  // 1. The clip fades up out of the dark and plays
+  ship.currentTime = 0;
+  ship.muted = !withSound;
+  ship.classList.add('on');
+  try { await ship.play(); } catch { ship.muted = true; await ship.play().catch(() => {}); }
+  await new Promise((resolve) => ship.addEventListener('ended', resolve, { once: true }));
 
-    const finish = () => { if (dialog.open) dialog.close(); };
-    video.addEventListener('ended', finish);
-    dialog.addEventListener('click', (e) => { if (e.target === dialog) finish(); });
-    dialog.addEventListener('close', () => {
-      dialog.classList.add('out');
-      setTimeout(() => { dialog.remove(); resolve(); }, 400);
-    });
-  });
-}
-
-// ---------- 2. Back in the scene: the station is gone ----------
-async function destroyStation() {
+  // 2. The final shot crosses the sky: one green beam from the ship to the station
   const s = worldRect(station);
+  const m = worldRect(ship);
+  const x1 = m.x + m.w * 0.7, y1 = m.y + m.h * 0.45;
+  const beam = fx('deathbeam green', x1, y1, { life: 1400 });
+  beam.style.width = `${Math.hypot(s.cx - x1, s.cy - y1)}px`;
+  beam.style.transform = `rotate(${Math.atan2(s.cy - y1, s.cx - x1)}rad)`;
+  await wait(350);
+
+  // 3. The station is hit: a green blast and a shower of pieces, then nothing
+  ship.classList.remove('on');
   fx('blast green', s.cx, s.cy, { life: 1600 });
   setTimeout(() => fx('blast green', s.cx + rand(-30, 30), s.cy + rand(-15, 15), { life: 1600 }), 180);
   for (let i = 0; i < 26; i++) {
@@ -72,9 +81,9 @@ async function destroyStation() {
   }
   station.animate([{ opacity: 1, filter: 'brightness(3)' }, { opacity: 0, filter: 'brightness(1)' }],
     { duration: 500, fill: 'forwards' });
-  await wait(12000);
+  await wait(10000);
 
-  // Rebuilt, quietly
+  // 4. Rebuilt, quietly
   station.getAnimations().forEach((a) => a.cancel());
   station.animate([{ opacity: 0 }, { opacity: 0.8 }], { duration: 2500 });
 }
