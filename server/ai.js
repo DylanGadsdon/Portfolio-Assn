@@ -26,7 +26,7 @@ export async function summarise(title, body) {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 120,          // a hard cap on reply length (and cost)
+      max_tokens: 600,          // a hard cap on reply length (and cost); room for models that "think" first
       temperature: 0.4,         // lower = more predictable, less "creative"
       messages: [
         {
@@ -40,7 +40,7 @@ export async function summarise(title, body) {
         { role: 'user', content: `Title: ${title}\n\n${body}` },
       ],
     }),
-    signal: AbortSignal.timeout(20000),   // give up after 20 seconds
+    signal: AbortSignal.timeout(45000),   // give up after 45 seconds (free models can be slow)
   });
 
   if (!response.ok) {

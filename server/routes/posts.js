@@ -138,7 +138,12 @@ router.post('/:id/summary', requireLogin, async (req, res, next) => {
       console.error('AI summary failed:', err.message);
       return res.status(502).json({ error: 'The AI did not answer. Try again in a moment.' });
     }
-    if (!summary) return res.status(503).json({ error: 'AI summaries are not set up (no API key)' });
+    if (!summary) {
+      const why = process.env.OPENROUTER_API_KEY
+        ? 'The AI sent back an empty answer. Try again.'
+        : 'AI summaries are not set up (no API key)';
+      return res.status(503).json({ error: why });
+    }
 
     await query('UPDATE posts SET summary = $1 WHERE id = $2', [summary, post.id]);
     res.json({ summary });
